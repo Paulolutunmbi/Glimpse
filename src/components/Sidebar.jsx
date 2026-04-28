@@ -5,7 +5,7 @@ export default function Sidebar() {
         <img
           src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="h-8 object-contain"
+          className="h-10 lg:h-12 xl:h-14 object-contain"
         />
         <div className="font-body-sm text-secondary font-normal mt-1 tracking-normal">Warm Minimalism</div>
       </div>

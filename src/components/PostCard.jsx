@@ -1,5 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { likePost } from '../api/posts';
+import { socket } from '../socket';
+import CommentModal from './CommentModal';
+
+const API = import.meta.env.VITE_API_URL;
 
 export default function PostCard({ post }) {
   const postId = useMemo(() => post?._id || post?.id, [post]);
@@ -8,6 +12,53 @@ export default function PostCard({ post }) {
   const [likes, setLikes] = useState(
     Array.isArray(post?.likes) ? post.likes.length : (post?.likesCount ?? post?.likes ?? 0)
   );
+  const [commentsList, setCommentsList] = useState([]);
+  const [text, setText] = useState('');
+  const [openComments, setOpenComments] = useState(false);
+
+  useEffect(() => {
+    if (!postId) return;
+    socket.emit('joinPost', postId);
+  }, [postId]);
+
+  useEffect(() => {
+    if (!postId) return;
+    let active = true;
+
+    const loadComments = async () => {
+      try {
+        const res = await fetch(`${API}/api/comments/${postId}`);
+        const data = await res.json();
+        if (active) setCommentsList(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadComments();
+
+    return () => {
+      active = false;
+    };
+  }, [postId]);
+
+  useEffect(() => {
+    if (!postId) return;
+
+    const onNewComment = (comment) => {
+      if (!comment || comment.postId !== postId) return;
+      setCommentsList((prev) => {
+        if (prev.some((c) => c._id === comment._id)) return prev;
+        return [...prev, comment];
+      });
+    };
+
+    socket.on('newComment', onNewComment);
+
+    return () => {
+      socket.off('newComment', onNewComment);
+    };
+  }, [postId]);
 
   const handleLike = async () => {
     if (!postId) return;
@@ -31,6 +82,30 @@ export default function PostCard({ post }) {
       console.error(err);
       setLiked(previousLiked);
       setLikes(previousLikes);
+    }
+  };
+
+  const handleComment = async () => {
+    const trimmed = text.trim();
+    if (!trimmed || !postId) return;
+
+    try {
+      const res = await fetch(`${API}/api/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId,
+          text: trimmed,
+          username: user?.username || 'Guest',
+          userId: user?.id || 'guest',
+        }),
+      });
+
+      const newComment = await res.json();
+      socket.emit('sendComment', newComment);
+      setText('');
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -88,7 +163,10 @@ export default function PostCard({ post }) {
                 favorite
               </span>
             </button>
-            <button className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center">
+            <button
+              className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center"
+              onClick={() => setOpenComments(true)}
+            >
               <span className="material-symbols-outlined">chat_bubble</span>
             </button>
             <button className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center">
@@ -109,12 +187,39 @@ export default function PostCard({ post }) {
           {caption}
         </div>
 
-        {comments > 0 && (
-          <button className="text-on-surface-variant font-body-sm text-[13px] text-left hover:underline w-max">
-            View all {comments} comments
-          </button>
+        {commentsList.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {commentsList.map((comment) => (
+              <div key={comment._id} className="font-body-sm text-on-surface">
+                <span className="font-label-md mr-1">{comment.username || 'Guest'}</span>
+                {comment.text}
+              </div>
+            ))}
+          </div>
         )}
+
+        <div className="flex items-center gap-2">
+          <input
+            className="flex-1 bg-surface-container-lowest border border-surface-variant rounded-full px-4 py-2 text-body-sm text-on-surface placeholder-on-surface-variant outline-none"
+            placeholder="Add a comment..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button
+            onClick={handleComment}
+            className="text-primary-container font-label-md hover:text-on-primary-fixed-variant transition-colors"
+            type="button"
+          >
+            Post
+          </button>
+        </div>
       </div>
+
+      <CommentModal
+        post={post}
+        isOpen={openComments}
+        onClose={() => setOpenComments(false)}
+      />
     </article>
   );
 }
