@@ -6,7 +6,7 @@ export default function Navbar({ currentUser }) {
         <img
           src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="h-7 object-contain"
+          className="h-16 object-contain"
         />
       </div>
 
