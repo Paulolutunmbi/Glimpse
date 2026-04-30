@@ -1,13 +1,11 @@
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL;
+import API from "./axios";
 
 export const getPosts = async () => {
-  const res = await axios.get(`${API}/api/posts`);
+  const res = await API.get("/api/posts");
   return res.data;
 };
 
 export const likePost = async (id) => {
-  const res = await axios.put(`${API}/api/posts/${id}/like`);
+  const res = await API.put(`/api/posts/${id}/like`);
   return res.data;
 };

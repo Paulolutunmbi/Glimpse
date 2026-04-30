@@ -26,6 +26,10 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.ambient-shadow {
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
+}
+
 /* Hide scrollbar for infinite scroll feel but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

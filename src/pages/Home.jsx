@@ -35,7 +35,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+    <div className="bg-background text-on-background font-body-md w-full min-h-screen flex antialiased">
       {/* SideNavBar (Desktop) */}
       <Sidebar />
 
@@ -45,10 +45,10 @@ export default function Home() {
         <Navbar currentUser={mockCurrentUser} />
 
         {/* Feed & Right Panel Container */}
-        <div className="flex-1 flex justify-center w-full max-w-container_max_width mx-auto px-4 md:px-margin_desktop py-lg gap-xl">
+        <div className="flex-1 flex w-full min-h-screen px-4 md:px-6 lg:px-8 py-lg gap-xl">
 
           {/* Central Feed */}
-          <div className="flex-1 max-w-[600px] w-full flex flex-col gap-lg pb-32 lg:pb-8">
+          <div className="flex-1 w-full flex flex-col gap-lg pb-32 lg:pb-8">
             {/* Story/Status Row */}
             <StoryRow stories={mockStories} />
 
@@ -91,7 +91,7 @@ export default function Home() {
             {!loading &&
               !error &&
               posts.map((post) => (
-                <PostCard key={post._id} post={post} />
+                <PostCard key={post._id} post={post} currentUser={mockCurrentUser} />
               ))}
           </div>
 

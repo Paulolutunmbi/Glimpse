@@ -1,24 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Centralised API configuration
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    withCredentials: true // To support cookies/sessions if needed in the future
+const API = axios.create({
+    baseURL: import.meta.env.VITE_API_URL,
 });
 
-// Request Interceptor to attach the token if available
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+API.interceptors.request.use((req) => {
+    const token = localStorage.getItem("token");
 
-export default api;
+    if (token) {
+        req.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return req;
+});
+
+export default API;

@@ -1,6 +1,6 @@
 export default function Navbar({ currentUser }) {
   return (
-    <header className="bg-white/80 backdrop-blur-md dark:bg-gray-900/80 text-rose-500 dark:text-rose-400 font-['Plus_Jakarta_Sans'] text-sm antialiased sticky top-0 w-full z-40 border-b border-gray-100 dark:border-gray-800 shadow-sm flex justify-between items-center px-4 md:px-8 py-3 max-w-full mx-auto">
+    <header className="bg-white/80 backdrop-blur-md dark:bg-gray-900/80 text-rose-500 dark:text-rose-400 font-['Plus_Jakarta_Sans'] text-sm antialiased sticky top-0 w-full z-40 border-b border-gray-100 dark:border-gray-800 shadow-sm flex flex-wrap items-center gap-3 px-4 md:px-6 lg:px-8 py-3">
       {/* Mobile Brand with logo — hidden on desktop since Sidebar has it */}
       <div className="lg:hidden flex items-center gap-2">
         <img
@@ -11,7 +11,7 @@ export default function Navbar({ currentUser }) {
       </div>
 
       {/* Search Bar */}
-      <div className="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-2 border border-surface-variant focus-within:border-primary-container transition-colors w-64 lg:w-96 ml-auto lg:ml-0">
+      <div className="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-2 border border-surface-variant focus-within:border-primary-container transition-colors w-64 lg:w-96">
         <span className="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
         <input
           className="bg-transparent border-none focus:ring-0 text-body-sm text-on-surface w-full p-0 placeholder-on-surface-variant outline-none"

@@ -5,6 +5,10 @@ export const authService = {
         const response = await api.post('/api/auth/register', userData);
         return response.data;
     },
+    verify: async (payload) => {
+        const response = await api.post('/api/auth/verify', payload);
+        return response.data;
+    },
     login: async (userData) => {
         const response = await api.post('/api/auth/login', userData);
         if (response.data.token) {
