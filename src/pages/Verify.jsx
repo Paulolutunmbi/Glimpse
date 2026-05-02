@@ -1,29 +1,30 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import { getApiErrorMessage } from '../utils/errors';
 
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 6; // Keeping the constant for code length
 
 const Verify = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const initialEmail = location.state?.email || localStorage.getItem('pendingEmail') || '';
-  const initialNotice = location.state?.notice || '';
   const codeInputs = useRef([]);
-  const [email] = useState(initialEmail);
+  const [email, setEmail] = useState('');
   const [codeDigits, setCodeDigits] = useState(() => Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(initialNotice);
+  const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const focusInput = (index) => {
-    const input = codeInputs.current[index];
-    if (input) {
-      input.focus();
-      input.select();
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('pendingEmail') || '';
+    const stateEmail = location.state?.email || '';
+    const notice = location.state?.notice || '';
+
+    setEmail(stateEmail || storedEmail);
+    if (notice) {
+      setSuccess(notice);
     }
-  };
+  }, [location.state]);
 
   const fillCodeFrom = (startIndex, value) => {
     const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH - startIndex).split('');
@@ -39,14 +40,15 @@ const Verify = () => {
       return next;
     });
 
-    focusInput(Math.min(startIndex + digits.length, CODE_LENGTH - 1));
+    const focusIndex = Math.min(startIndex + digits.length, CODE_LENGTH - 1);
+    const nextInput = codeInputs.current[focusIndex];
+    if (nextInput) {
+      nextInput.focus();
+    }
   };
 
   const handleCodeChange = (index, value) => {
     const digits = value.replace(/\D/g, '');
-    setError('');
-    setSuccess('');
-
     if (digits.length === 0) {
       setCodeDigits((prev) => {
         const next = [...prev];
@@ -64,7 +66,10 @@ const Verify = () => {
       });
 
       if (index < CODE_LENGTH - 1) {
-        focusInput(index + 1);
+        const nextInput = codeInputs.current[index + 1];
+        if (nextInput) {
+          nextInput.focus();
+        }
       }
       return;
     }
@@ -73,16 +78,26 @@ const Verify = () => {
   };
 
   const handleCodeKeyDown = (index, event) => {
-    if (event.key !== 'Backspace' || codeDigits[index] !== '' || index === 0) {
+    if (event.key !== 'Backspace') {
       return;
     }
 
-    focusInput(index - 1);
+    if (codeDigits[index] !== '') {
+      return;
+    }
+
+    if (index > 0) {
+      const prevInput = codeInputs.current[index - 1];
+      if (prevInput) {
+        prevInput.focus();
+      }
+    }
   };
 
   const handleCodePaste = (index, event) => {
     event.preventDefault();
-    fillCodeFrom(index, event.clipboardData.getData('text'));
+    const pasted = event.clipboardData.getData('text');
+    fillCodeFrom(index, pasted);
   };
 
   const handleSubmit = async (event) => {
@@ -117,7 +132,7 @@ const Verify = () => {
           <img
             src="/images/glimpse-logo.png"
             alt="Glimpse"
-            className="mx-auto h-8 w-auto object-contain"
+            className="h-8 w-auto mx-auto"
           />
         </div>
 
@@ -134,17 +149,15 @@ const Verify = () => {
                 ref={(input) => {
                   codeInputs.current[index] = input;
                 }}
-                className="w-[45px] h-[56px] sm:w-[50px] sm:h-[60px] border border-outline-variant rounded-xl text-center font-h2 text-h2 text-on-surface bg-surface-bright focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors shadow-sm"
                 type="text"
                 inputMode="numeric"
                 autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                maxLength={1}
-                placeholder="·"
-                aria-label={`Verification code digit ${index + 1}`}
                 value={digit}
                 onChange={(event) => handleCodeChange(index, event.target.value)}
                 onKeyDown={(event) => handleCodeKeyDown(index, event)}
                 onPaste={(event) => handleCodePaste(index, event)}
+                placeholder="·"
+                className="w-[45px] h-[56px] sm:w-[50px] sm:h-[60px] border border-outline-variant rounded-xl text-center font-h2 text-h2 text-on-surface bg-surface-bright focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors shadow-sm"
               />
             ))}
           </div>
@@ -162,31 +175,37 @@ const Verify = () => {
           ) : null}
 
           <button
-            className="w-full bg-primary-container text-on-primary font-label-md text-label-md py-md rounded-xl hover:bg-primary transition-all active:scale-[0.98] border-b-2 border-primary-fixed-dim shadow-sm flex justify-center items-center gap-sm disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
             disabled={isSubmitting}
+            className="w-full bg-primary-container text-on-primary font-label-md text-label-md py-md rounded-xl hover:bg-primary transition-all active:scale-[0.98] border-b-2 border-primary-fixed-dim shadow-sm flex justify-center items-center gap-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? 'Verifying...' : 'Verify'}
+            Verify
           </button>
         </form>
 
         <div className="mt-lg flex flex-col items-center gap-md w-full">
           <p className="font-label-sm text-label-sm text-on-surface-variant">
-            Didn't get a code?{' '}
+            Didn't get a code?
             <button
-              className="text-primary-container font-label-md text-label-md hover:underline"
               type="button"
+              className="text-primary-container font-label-md text-label-md hover:underline ml-1"
             >
               Resend
             </button>
           </p>
           <Link
-            className="font-label-md text-label-md text-on-surface-variant hover:text-on-surface flex items-center gap-xs transition-colors"
             to="/login"
+            className="font-label-md text-label-md text-on-surface-variant hover:text-on-surface flex items-center gap-xs transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             Back to Login
           </Link>
+          <p className="font-label-sm text-label-sm text-on-surface-variant">
+            Need a new account?{' '}
+            <Link className="text-primary-container font-label-md text-label-md hover:underline" to="/signup">
+              Sign up
+            </Link>
+          </p>
         </div>
       </main>
     </div>

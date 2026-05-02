@@ -1,4 +1,6 @@
 export default function Suggestions({ currentUser, suggestions }) {
+  const currentYear = new Date().getFullYear();
+
   return (
     <aside className="hidden xl:flex flex-col w-80 gap-lg sticky top-24 h-max">
       {/* Current User Mini Profile */}
@@ -65,7 +67,7 @@ export default function Suggestions({ currentUser, suggestions }) {
           </a>
         ))}
       </div>
-      <p className="font-body-sm text-[12px] text-on-surface-variant mt-2">© 2024 Glimpse Social</p>
+      <p className="font-body-sm text-[12px] text-on-surface-variant mt-2">© {currentYear} Glimpse Social</p>
     </aside>
   );
 }

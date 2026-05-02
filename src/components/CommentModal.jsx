@@ -182,11 +182,11 @@ const CommentModal = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/60 z-[60]"
+      className="fixed inset-0 flex items-center justify-center bg-black/60 z-[60] p-2 sm:p-4 md:p-6"
       onClick={handleClose}
     >
       <div
-        className="bg-white w-full h-[100vh] overflow-y-auto md:max-w-lg lg:max-w-xl md:h-[90vh] md:rounded-xl rounded-none flex flex-col"
+        className="bg-white w-full h-[100vh] overflow-y-auto md:h-[90vh] md:w-[640px] lg:w-[720px] md:rounded-2xl rounded-none flex flex-col shadow-xl"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

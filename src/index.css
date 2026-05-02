@@ -5,6 +5,10 @@
 @config "../tailwind.config.js";
 
 @layer base {
+  #root {
+    @apply min-h-screen w-full;
+  }
+
   body {
     @apply bg-background text-on-background font-body-md min-h-screen flex antialiased;
   }
