@@ -65,11 +65,13 @@ const Signup = () => {
         <div className="w-full md:w-1/2 lg:w-5/12 xl:w-1/3 p-margin_mobile md:p-margin_desktop lg:p-xxl flex flex-col justify-center bg-surface relative z-10 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)]">
           <div className="mx-auto w-full max-w-[384px]">
             <div className="mb-xl text-center md:text-left">
-              <img
-                src="/images/glimpse-logo-light-dark.png"
-                alt="Glimpse"
-                className="mx-auto md:mx-0 h-[200px] w-auto"
-              />
+              <div className="flex justify-center min-[420px]:justify-start">
+                <img
+                  src="/images/glimpse-logo-light-dark.png"
+                  alt="Glimpse"
+                  className="h-[200px] w-auto"
+                />
+              </div>
               <h2 className="font-h2 text-h2 text-on-surface mb-xs mt-sm">Create your account</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 Join the conversation and start sharing.

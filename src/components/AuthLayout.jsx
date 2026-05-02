@@ -44,7 +44,7 @@ const AuthLayout = ({
         </aside>
 
         <main className="relative flex flex-1 items-center justify-center bg-surface px-margin_mobile py-[82px] sm:px-xl md:py-xxl lg:px-xxl dark:bg-[#201313]">
-          <header className="absolute left-margin_mobile right-margin_mobile top-margin_mobile flex items-center justify-between sm:left-xl sm:right-xl lg:hidden">
+          <header className="absolute left-margin_mobile right-margin_mobile top-margin_mobile flex items-center justify-center min-[420px]:justify-start sm:left-xl sm:right-xl lg:hidden">
             <img
               src="/images/glimpse-logo-light-dark.png"
               alt="Glimpse"
