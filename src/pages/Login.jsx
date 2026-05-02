@@ -28,6 +28,7 @@ const Login = () => {
     return stateEmail || storedEmail;
   });
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(location.state?.notice || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,14 +189,24 @@ const Login = () => {
                     <input
                       id="password"
                       name="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
                       required
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className="ambient-shadow block h-12 w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-2 pl-10 pr-2 font-body-md text-body-md text-on-background placeholder:text-outline-variant focus:border-primary-container focus:outline-none focus:ring-0"
+                      className="ambient-shadow block h-12 w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-2 pl-10 pr-12 font-body-md text-body-md text-on-background placeholder:text-outline-variant focus:border-primary-container focus:outline-none focus:ring-0"
                       placeholder="••••••••"
                     />
+                    <button
+                      className="absolute right-sm top-1/2 -translate-y-1/2 text-outline transition-colors hover:text-primary-container"
+                      type="button"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword((current) => !current)}
+                    >
+                      <span className="material-symbols-outlined text-[20px]" data-icon="visibility">
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>

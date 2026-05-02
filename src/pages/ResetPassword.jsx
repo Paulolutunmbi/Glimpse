@@ -13,6 +13,8 @@ const ResetPassword = () => {
   const token = useMemo(() => searchParams.get('token') || '', [searchParams]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,8 +53,19 @@ const ResetPassword = () => {
   };
 
   return (
-    <AuthLayout kicker="Choose a new password. Keep your account close.">
+    <AuthLayout
+      kicker="Choose a new password. Keep your account close."
+      logoSizeClass="h-[192px]"
+      sidebarLogoSizeClass="h-[168px]"
+    >
       <section className="relative z-10 w-full max-w-[520px] rounded-2xl bg-surface-container-lowest p-lg shadow-[0_22px_45px_-30px_rgba(61,44,44,0.65)] sm:p-xl lg:p-xxl dark:bg-[#261817] dark:shadow-[0_22px_45px_-30px_rgba(0,0,0,0.9)]">
+        <div className="mb-lg flex justify-center sm:justify-start lg:hidden">
+          <img
+            src="/images/glimpse-logo-light-dark.png"
+            alt="Glimpse"
+            className="h-[192px] w-auto object-contain"
+          />
+        </div>
         <div className="mb-xl">
           <Link
             to="/login"
@@ -78,25 +91,49 @@ const ResetPassword = () => {
           <InputField
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             label="New Password"
             icon="lock"
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Enter your new password"
+            endAction={
+              <button
+                type="button"
+                className="text-outline transition-colors hover:text-primary-container"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <span className="material-symbols-outlined text-[20px]" data-icon="visibility">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            }
           />
 
           <InputField
             id="confirmPassword"
             name="confirmPassword"
-            type="password"
+            type={showConfirmPassword ? 'text' : 'password'}
             label="Confirm Password"
             icon="lock"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             placeholder="Confirm your new password"
+            endAction={
+              <button
+                type="button"
+                className="text-outline transition-colors hover:text-primary-container"
+                onClick={() => setShowConfirmPassword((current) => !current)}
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                <span className="material-symbols-outlined text-[20px]" data-icon="visibility">
+                  {showConfirmPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            }
           />
 
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}

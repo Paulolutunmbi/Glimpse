@@ -305,7 +305,6 @@ const Signup = () => {
             <div className="flex gap-6 items-center font-label-sm text-label-sm tracking-wide">
               <div className="flex items-center gap-2">
                 <span>(c) 2026 Glimpse</span>
-                <img src="/images/glimpse-logo-light-dark.png" alt="Glimpse" className="h-4 w-auto" />
               </div>
               <a className="hover:text-primary-container transition-colors duration-200" href="#">
                 Privacy
