@@ -1,54 +1,68 @@
-const AuthLayout = ({ title, subtitle, children, footer }) => {
+const authImage =
+  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=90';
+
+const AuthLayout = ({
+  children,
+  imageAlt = 'A diverse group of people gathered together and smiling in a warm candid photograph.',
+  kicker = 'Reset your access. Keep capturing moments.',
+  description = "Our community is built on the shared stories we tell through lenses. Let's get you back to the view.",
+  logoSizeClass = 'h-16',
+  sidebarLogoSizeClass = 'h-14',
+}) => {
+
   return (
-    <div className="min-h-screen w-full bg-surface text-on-surface">
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-12 sm:px-6">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-tertiary-container/30 blur-3xl" />
-        </div>
+    <div className="min-h-screen bg-background font-body-md text-on-background selection:bg-primary-container selection:text-white dark:bg-[#1d1111] dark:text-[#ffedeb]">
+      <div className="flex min-h-screen w-full flex-col lg:flex-row">
+        <aside className="relative hidden min-h-screen w-1/2 overflow-hidden lg:flex">
+          <img
+            src={authImage}
+            alt={imageAlt}
+            className="absolute inset-0 h-full w-full object-cover grayscale"
+          />
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-transparent to-black/35" />
 
-        <div className="relative w-full max-w-5xl grid gap-6 md:grid-cols-[1.1fr_1fr] items-stretch">
-          <div className="hidden md:flex flex-col justify-between rounded-3xl bg-surface-container-lowest p-10 shadow-lg border border-surface-variant">
-            <div>
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-label-sm text-primary">
-                Glimpse
-              </span>
-              <h1 className="mt-6 text-display font-display text-on-surface">
-                Share moments. Stay close.
-              </h1>
-              <p className="mt-3 text-body-lg text-on-surface-variant">
-                A calm space to connect with the people who matter, without the noise.
-              </p>
-            </div>
-
-            <div className="mt-10 grid grid-cols-2 gap-4 text-body-sm text-on-surface-variant">
-              <div className="rounded-2xl bg-surface-container-low p-4 border border-surface-variant">
-                <p className="text-label-md text-on-surface">Fast onboarding</p>
-                <p className="mt-2">Create an account and verify in minutes.</p>
-              </div>
-              <div className="rounded-2xl bg-surface-container-low p-4 border border-surface-variant">
-                <p className="text-label-md text-on-surface">Private by design</p>
-                <p className="mt-2">Your data stays protected and secure.</p>
+          <div className="relative z-10 flex h-full w-full flex-col justify-between p-xxl">
+            <div className="max-w-[560px]">
+              <img
+                src="/images/glimpse-logo-light-dark.png"
+                alt="Glimpse"
+                className={`${sidebarLogoSizeClass} w-auto object-contain`}
+              />
+              <div className="mt-lg space-y-md">
+                <h1 className="max-w-[520px] font-display text-[28px] font-bold leading-tight text-white lg:text-[32px]">
+                  {kicker}
+                </h1>
+                <p className="max-w-[500px] font-body-md text-[16px] leading-7 text-white/82">
+                  {description}
+                </p>
               </div>
             </div>
+
+            <p className="font-label-sm text-label-sm text-white/62">(c) 2026 Glimpse</p>
+          </div>
+        </aside>
+
+        <main className="relative flex flex-1 items-center justify-center bg-surface px-margin_mobile py-[82px] sm:px-xl md:py-xxl lg:px-xxl dark:bg-[#201313]">
+          <header className="absolute left-margin_mobile right-margin_mobile top-margin_mobile flex items-center justify-between sm:left-xl sm:right-xl lg:hidden">
+            <img
+              src="/images/glimpse-logo-light-dark.png"
+              alt="Glimpse"
+              className={`${logoSizeClass} w-auto object-contain`}
+            />
+          </header>
+
+          <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-52 overflow-hidden md:block lg:hidden">
+            <img
+              src={authImage}
+              alt=""
+              className="h-full w-full object-cover opacity-[0.08] grayscale dark:opacity-[0.16]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface dark:to-[#201313]" />
           </div>
 
-          <div className="rounded-3xl bg-surface-container-lowest border border-surface-variant shadow-lg p-8 sm:p-10">
-            <div className="space-y-2">
-              <p className="text-label-md uppercase tracking-[0.14em] text-primary">Welcome</p>
-              <h2 className="text-h1 font-display text-on-surface">{title}</h2>
-              {subtitle ? (
-                <p className="text-body-md text-on-surface-variant">{subtitle}</p>
-              ) : null}
-            </div>
-
-            <div className="mt-8 space-y-6">
-              {children}
-            </div>
-
-            {footer ? <div className="mt-8 text-body-sm text-on-surface-variant">{footer}</div> : null}
-          </div>
-        </div>
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import { getApiErrorMessage } from '../utils/errors';
@@ -9,22 +9,14 @@ const Verify = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const codeInputs = useRef([]);
-  const [email, setEmail] = useState('');
+  const initialEmail = location.state?.email || localStorage.getItem('pendingEmail') || '';
+  const initialNotice = location.state?.notice || '';
+  const [email] = useState(initialEmail);
   const [codeDigits, setCodeDigits] = useState(() => Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(initialNotice);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const storedEmail = localStorage.getItem('pendingEmail') || '';
-    const stateEmail = location.state?.email || '';
-    const notice = location.state?.notice || '';
-
-    setEmail(stateEmail || storedEmail);
-    if (notice) {
-      setSuccess(notice);
-    }
-  }, [location.state]);
+  const [isResending, setIsResending] = useState(false);
 
   const fillCodeFrom = (startIndex, value) => {
     const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH - startIndex).split('');
@@ -110,6 +102,7 @@ const Verify = () => {
       const payload = { email: email.trim(), code: codeDigits.join('').trim() };
       await API.post('/api/auth/verify', payload);
       setSuccess('Email verified. Redirecting to login...');
+      localStorage.removeItem('pendingEmail');
       setTimeout(() => {
         navigate('/login', {
           state: {
@@ -122,6 +115,27 @@ const Verify = () => {
       setError(getApiErrorMessage(err, 'Verification failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!email) {
+      setError('Open signup again so we know which email to verify.');
+      return;
+    }
+
+    setIsResending(true);
+
+    try {
+      await API.post('/api/auth/resend-verification', { email: email.trim() });
+      setSuccess('A new verification code has been sent.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Unable to resend code. Please try again.'));
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -188,9 +202,11 @@ const Verify = () => {
             Didn't get a code?
             <button
               type="button"
+              onClick={handleResend}
+              disabled={isResending}
               className="text-primary-container font-label-md text-label-md hover:underline ml-1"
             >
-              Resend
+              {isResending ? 'Sending...' : 'Resend'}
             </button>
           </p>
           <Link

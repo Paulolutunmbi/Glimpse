@@ -91,10 +91,11 @@ const Login = () => {
       const payload = { email: email.trim(), password };
       const response = await API.post('/api/auth/login', payload);
       const data = response?.data;
-      const token = data?.token || data?.accessToken || data?.jwt;
+      const token = data?.token || data?.data?.token || data?.accessToken || data?.jwt;
 
       if (token) {
         localStorage.setItem('token', token);
+        localStorage.removeItem('pendingEmail');
       }
 
       setSuccess('Login successful. Redirecting...');
@@ -110,14 +111,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background text-on-background selection:bg-primary-container selection:text-white">
-      <header className="fixed top-0 z-50 hidden h-16 w-full items-center bg-white/80 px-7 backdrop-blur-md min-[420px]:flex md:px-12">
-        <img
-          src="/images/glimpse-logo.png"
-          alt="App logo"
-          className="h-6 w-auto object-contain"
-        />
-      </header>
-
       <main className="flex min-h-screen w-full flex-col min-[420px]:flex-row">
         <section className="relative h-[246px] w-full flex-shrink-0 overflow-hidden bg-surface-variant min-[420px]:hidden">
           <img
@@ -130,6 +123,13 @@ const Login = () => {
 
         <section className="relative z-10 flex w-full flex-1 flex-col items-center justify-start border-t border-outline-variant/60 bg-background px-5 pb-8 pt-8 min-[420px]:w-1/2 min-[420px]:justify-center min-[420px]:border-t-0 min-[420px]:px-6 min-[420px]:pt-16 lg:px-12">
           <div className="w-full min-w-0 max-w-[360px] space-y-8 lg:max-w-[448px]">
+            <div className="flex justify-center min-[420px]:justify-start">
+              <img
+                src="/images/glimpse-logo-light-dark.png"
+                alt="Glimpse"
+                className="h-[200px] w-auto object-contain"
+              />
+            </div>
             <div className="space-y-2 text-center min-[420px]:text-left">
               <h1 className="font-h1 text-[24px] font-bold leading-tight tracking-[-0.02em] text-on-background md:text-h1">
                 Welcome Back
@@ -174,12 +174,12 @@ const Login = () => {
                     >
                       Password
                     </label>
-                    <a
+                    <Link
                       className="font-label-sm text-label-sm text-primary-container transition-all hover:underline"
-                      href="#"
+                      to="/forgot-password"
                     >
                       Forgot password?
-                    </a>
+                    </Link>
                   </div>
                   <div className="relative">
                     <span className="material-symbols-outlined pointer-events-none absolute left-sm top-1/2 -translate-y-1/2 text-[20px] text-outline transition-colors group-focus-within:text-primary-container">

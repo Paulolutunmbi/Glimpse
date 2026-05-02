@@ -16,7 +16,6 @@ const signupPhotos = {
 
 const Signup = () => {
   const navigate = useNavigate();
-  const currentYear = new Date().getFullYear();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -67,9 +66,9 @@ const Signup = () => {
           <div className="mx-auto w-full max-w-[384px]">
             <div className="mb-xl text-center md:text-left">
               <img
-                src="/images/glimpse-logo.png"
-                alt="Brand logo"
-                className="mx-auto md:mx-0 h-10 w-auto"
+                src="/images/glimpse-logo-light-dark.png"
+                alt="Glimpse"
+                className="mx-auto md:mx-0 h-[200px] w-auto"
               />
               <h2 className="font-h2 text-h2 text-on-surface mb-xs mt-sm">Create your account</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -159,7 +158,7 @@ const Signup = () => {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full bg-surface-container-low border border-surface-variant rounded-xl px-4 py-3 pl-12 pr-12 text-on-surface font-body-md placeholder:text-on-surface-variant focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-200"
+                    className="w-full bg-surface-container-low border border-surface-variant rounded-xl px-4 py-3 pl-12 pr-12 text-on-surface font-body-md placeholder:text-outline-variant focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-200"
                     placeholder="••••••••"
                   />
                   <button
@@ -198,7 +197,7 @@ const Signup = () => {
                     required
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="w-full bg-surface-container-low border border-surface-variant rounded-xl px-4 py-3 pl-12 pr-12 text-on-surface font-body-md placeholder:text-on-surface-variant focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-200"
+                    className="w-full bg-surface-container-low border border-surface-variant rounded-xl px-4 py-3 pl-12 pr-12 text-on-surface font-body-md placeholder:text-outline-variant focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-200"
                     placeholder="••••••••"
                   />
                   <button
@@ -303,8 +302,8 @@ const Signup = () => {
           <div className="hidden md:block absolute bottom-8 left-8 text-on-surface-variant opacity-70">
             <div className="flex gap-6 items-center font-label-sm text-label-sm tracking-wide">
               <div className="flex items-center gap-2">
-                <span>© {currentYear}</span>
-                <img src="/images/glimpse-logo.png" alt="Brand logo" className="h-4 w-auto" />
+                <span>(c) 2026 Glimpse</span>
+                <img src="/images/glimpse-logo-light-dark.png" alt="Glimpse" className="h-4 w-auto" />
               </div>
               <a className="hover:text-primary-container transition-colors duration-200" href="#">
                 Privacy
