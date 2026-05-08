@@ -1,42 +1,38 @@
+const links = [
+  ['home', 'Home'],
+  ['auto_awesome', 'Moments', true],
+  ['forum', 'Messages'],
+  ['person', 'Profile'],
+  ['dashboard', 'Admin'],
+  ['settings', 'Settings'],
+];
+
 export default function Sidebar() {
   return (
-    <nav className="bg-white dark:bg-gray-900 text-rose-500 dark:text-rose-400 font-['Plus_Jakarta_Sans'] text-base font-medium h-screen w-64 fixed left-0 top-0 border-r border-gray-100 dark:border-gray-800 hidden lg:flex flex-col p-6 gap-2 z-50">
-      <div className="mb-8">
-        <img
-          src="/images/glimpse-logo-light-dark.png"
-          alt="Glimpse"
-          className="h-10 lg:h-12 xl:h-25 object-contain"
-        />
-        <div className="font-body-sm text-secondary font-normal mt-1 tracking-normal">Warm Minimalism</div>
+    <nav className="fixed left-0 top-0 z-30 hidden h-screen w-64 flex-col gap-2 border-r border-gray-100 bg-white p-6 pt-24 text-base font-medium dark:border-gray-800 dark:bg-gray-900 lg:flex font-display">
+      <div className="mt-4 flex flex-1 flex-col gap-2">
+        {links.map(([icon, label, active]) => (
+          <a
+            key={label}
+            className={`press-in flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+              active
+                ? 'bg-rose-50 font-bold text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
+                : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'
+            }`}
+            href={label === 'Profile' ? '/profile' : '#'}
+          >
+            <span
+              className={`material-symbols-outlined ${active ? 'material-symbols-filled' : ''}`}
+            >
+              {icon}
+            </span>
+            {label}
+          </a>
+        ))}
       </div>
-      <div className="flex flex-col gap-2 flex-1">
-        {/* Active Tab: Home */}
-        <a className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl px-4 py-3 font-bold flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all" href="#">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
-          Home
-        </a>
-        {/* Inactive Tabs */}
-        <a className="text-gray-600 dark:text-gray-400 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-all flex items-center gap-4" href="#">
-          <span className="material-symbols-outlined">auto_awesome</span>
-          Moments
-        </a>
-        <a className="text-gray-600 dark:text-gray-400 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-all flex items-center gap-4" href="#">
-          <span className="material-symbols-outlined">forum</span>
-          Messages
-        </a>
-        <a className="text-gray-600 dark:text-gray-400 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-all flex items-center gap-4" href="#">
-          <span className="material-symbols-outlined">person</span>
-          Profile
-        </a>
-        {/* The prompt said: "Do NOT include any admin button or admin UI anywhere".
-            So I will remove the Admin tab. */}
-        <a className="text-gray-600 dark:text-gray-400 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-all flex items-center gap-4" href="#">
-          <span className="material-symbols-outlined">settings</span>
-          Settings
-        </a>
-      </div>
-      <button className="bg-primary-container text-white font-label-md py-3 px-4 rounded-xl shadow-[0_4px_12px_rgba(255,90,95,0.2)] mt-auto hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
-        <span className="material-symbols-outlined">add_circle</span>
+
+      <button className="press-in mt-auto flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 font-label-md font-semibold text-white shadow-[0_4px_14px_rgba(255,90,95,0.25)] transition-colors hover:bg-primary">
+        <span className="material-symbols-outlined text-[20px]">add</span>
         Create Moment
       </button>
     </nav>

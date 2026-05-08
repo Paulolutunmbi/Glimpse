@@ -30,8 +30,46 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .ambient-shadow {
   box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
+}
+
+.ambient-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.press-in:active {
+  transform: scale(0.98);
+}
+
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.masonry-feed {
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .masonry-feed {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .masonry-feed {
+    column-count: 3;
+  }
 }
 
 /* Hide scrollbar for infinite scroll feel but keep functionality */

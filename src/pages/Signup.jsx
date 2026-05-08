@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
+import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
 
 const signupPhotos = {
@@ -41,7 +41,7 @@ const Signup = () => {
       }
 
       const payload = { username: username.trim(), email: email.trim(), password };
-      await API.post('/api/auth/register', payload);
+      await authService.register(payload);
       localStorage.setItem('pendingEmail', payload.email);
       setSuccess('Account created. We sent a verification code to your email.');
       setTimeout(() => {

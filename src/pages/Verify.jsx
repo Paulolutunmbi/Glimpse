@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
+import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
 
 const CODE_LENGTH = 6; // Keeping the constant for code length
@@ -100,7 +100,7 @@ const Verify = () => {
 
     try {
       const payload = { email: email.trim(), code: codeDigits.join('').trim() };
-      await API.post('/api/auth/verify', payload);
+      await authService.verify(payload);
       setSuccess('Email verified. Redirecting to login...');
       localStorage.removeItem('pendingEmail');
       setTimeout(() => {
@@ -130,7 +130,7 @@ const Verify = () => {
     setIsResending(true);
 
     try {
-      await API.post('/api/auth/resend-verification', { email: email.trim() });
+      await authService.resendVerification({ email: email.trim() });
       setSuccess('A new verification code has been sent.');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Unable to resend code. Please try again.'));

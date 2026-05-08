@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import API from "../api/axios";
+import { commentService } from "../services/apiService";
+import { socket } from "../socket";
 
 const CommentModal = ({
   post,
@@ -16,10 +17,12 @@ const CommentModal = ({
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [error, setError] = useState("");
   const nextClientId = useRef(1);
 
   const postId = useMemo(() => post?._id || post?.id, [post]);
   const imageSrc = post?.imageUrl || post?.image;
+  const defaultAvatar = '/images/glimpse-icon.png';
   const imageSources = useMemo(() => {
     if (Array.isArray(post?.images)) {
       return post.images.filter(Boolean);
@@ -68,8 +71,7 @@ const CommentModal = ({
 
     const fetchComments = async () => {
       try {
-        const res = await API.get(`/api/comments/${postId}`);
-        const data = res.data;
+        const data = await commentService.getByPost(postId);
         setComments(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
@@ -78,6 +80,52 @@ const CommentModal = ({
 
     fetchComments();
   }, [postId]);
+
+  useEffect(() => {
+    if (!isOpen || !postId) return;
+
+    socket.emit("joinPost", postId);
+
+    const handleCommentCreated = (payload) => {
+      const incoming = payload?.comment || payload;
+      if (!incoming) return;
+      const incomingId = incoming._id || incoming.id;
+      setComments((prev) => {
+        if (incomingId && prev.some((item) => item._id === incomingId || item.id === incomingId)) {
+          return prev;
+        }
+        return [...prev, incoming];
+      });
+    };
+
+    const handleCommentUpdated = (payload) => {
+      const incoming = payload?.comment || payload;
+      const incomingId = incoming?._id || incoming?.id;
+      if (!incomingId) return;
+      setComments((prev) =>
+        prev.map((item) =>
+          item._id === incomingId || item.id === incomingId ? { ...item, ...incoming } : item
+        )
+      );
+    };
+
+    const handleCommentDeleted = (payload) => {
+      const commentId = payload?.commentId || payload?.id || payload;
+      if (!commentId) return;
+      setComments((prev) => prev.filter((item) => item._id !== commentId && item.id !== commentId));
+    };
+
+    socket.on("comment:created", handleCommentCreated);
+    socket.on("comment:updated", handleCommentUpdated);
+    socket.on("comment:deleted", handleCommentDeleted);
+
+    return () => {
+      socket.emit("leavePost", postId);
+      socket.off("comment:created", handleCommentCreated);
+      socket.off("comment:updated", handleCommentUpdated);
+      socket.off("comment:deleted", handleCommentDeleted);
+    };
+  }, [isOpen, postId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,6 +161,8 @@ const CommentModal = ({
     const trimmed = value.trim();
     if (!trimmed) return;
 
+    setError("");
+
     const payload = {
       postId,
       text: trimmed,
@@ -128,22 +178,25 @@ const CommentModal = ({
       payload.avatar = currentUser.avatar;
     }
 
-    const res = await API.post("/api/comments", payload);
-    const newComment = res.data;
-    const resolvedComment = {
-      ...newComment,
-      text: newComment?.text ?? trimmed,
-      username: newComment?.username ?? currentUser?.username ?? "Guest",
-      userId: newComment?.userId ?? currentUserId ?? null,
-      avatar: newComment?.avatar ?? currentUser?.avatar ?? null,
-      clientId:
-        newComment?._id || newComment?.id
-          ? undefined
-          : `client-${nextClientId.current++}`,
-    };
+    try {
+      const newComment = await commentService.create(payload);
+      const resolvedComment = {
+        ...newComment,
+        text: newComment?.text ?? trimmed,
+        username: newComment?.username ?? currentUser?.username ?? "Guest",
+        userId: newComment?.userId ?? currentUserId ?? null,
+        avatar: newComment?.avatar ?? currentUser?.avatar ?? null,
+        clientId:
+          newComment?._id || newComment?.id
+            ? undefined
+            : `client-${nextClientId.current++}`,
+      };
 
-    setComments((prev) => [...prev, resolvedComment]);
-    setText("");
+      setComments((prev) => [...prev, resolvedComment]);
+      setText("");
+    } catch {
+      setError("Failed to post comment. Please try again.");
+    }
   };
 
   const handleStartEdit = (comment) => {
@@ -152,28 +205,53 @@ const CommentModal = ({
     setMenuOpenId(null);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     const trimmed = editingText.trim();
     if (!trimmed) return;
+    setError("");
+
+    const previousComments = comments;
+    const target = comments.find((comment) => getCommentKey(comment) === editingId);
+    const commentId = target?._id || target?.id;
+
     setComments((prev) =>
       prev.map((comment) =>
-        getCommentKey(comment) === editingId
-          ? { ...comment, text: trimmed }
-          : comment
+        getCommentKey(comment) === editingId ? { ...comment, text: trimmed } : comment
       )
     );
     handleCancelEdit();
+
+    if (!commentId) return;
+
+    try {
+      const response = await commentService.update(commentId, { text: trimmed });
+      const updated = response?.data || response?.comment || response?.data?.comment || response;
+      if (updated) {
+        setComments((prev) =>
+          prev.map((comment) =>
+            (comment._id === commentId || comment.id === commentId) ? { ...comment, ...updated } : comment
+          )
+        );
+      }
+    } catch {
+      setComments(previousComments);
+      setError("Failed to update comment. Please try again.");
+    }
   };
 
-  const handleDeleteComment = (comment) => {
+  const handleDeleteComment = async (comment) => {
     const key = getCommentKey(comment);
+    const previousComments = comments;
     setComments((prev) => prev.filter((item) => getCommentKey(item) !== key));
     if (editingId === key) handleCancelEdit();
     const commentId = comment?._id || comment?.id;
     if (!commentId) return;
-    API.delete(`/api/comments/${commentId}`).catch((err) => {
-      console.error(err);
-    });
+    try {
+      await commentService.remove(commentId);
+    } catch {
+      setComments(previousComments);
+      setError("Failed to delete comment. Please try again.");
+    }
   };
 
   const isActive = text.trim().length > 0;
@@ -260,6 +338,11 @@ const CommentModal = ({
         </div>
 
         <div className="px-4 py-3 flex flex-col gap-4 bg-white">
+          {error ? (
+            <div className="rounded-lg border border-error/30 bg-error-container px-3 py-2 text-sm text-on-error-container">
+              {error}
+            </div>
+          ) : null}
           {comments.length === 0 && (
             <p className="text-sm text-on-surface-variant">
               No comments yet. Be the first to say something.
@@ -277,9 +360,10 @@ const CommentModal = ({
                   className="w-8 h-8 rounded-full object-cover shrink-0"
                   src={
                     c.avatar ||
+                    currentUser?.profilePicture ||
                     currentUser?.avatar ||
                     post?.user?.avatar ||
-                    "/images/glimpse-icon.png"
+                    defaultAvatar
                   }
                 />
                 <div className="flex-1 flex items-start gap-2">

@@ -4,7 +4,7 @@ import AuthLayout from '../components/AuthLayout';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
 import StatusMessage from '../components/StatusMessage';
-import API from '../api/axios';
+import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -35,7 +35,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      await API.post('/api/auth/forgot-password', { email: trimmedEmail });
+      await authService.forgotPassword({ email: trimmedEmail });
       setSuccess(true);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Unable to send reset link. Please try again.'));

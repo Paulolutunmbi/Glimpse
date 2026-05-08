@@ -7,7 +7,7 @@ export default function StoryRow({ stories }) {
             <img 
               className="w-full h-full rounded-full object-cover" 
               alt={story.username} 
-              src={story.avatar} 
+              src={story.avatar || '/images/glimpse-icon.png'} 
             />
             {story.isYou && (
               <div className="absolute bottom-0 right-0 bg-primary-container text-white rounded-full w-5 h-5 flex items-center justify-center border-2 border-surface">

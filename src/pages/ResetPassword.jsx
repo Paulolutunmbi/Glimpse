@@ -4,7 +4,7 @@ import AuthLayout from '../components/AuthLayout';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
 import StatusMessage from '../components/StatusMessage';
-import API from '../api/axios';
+import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
 
 const ResetPassword = () => {
@@ -42,7 +42,7 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      await API.post('/api/auth/reset-password', { token, newPassword: password });
+      await authService.resetPassword({ token, newPassword: password });
       setSuccess('Password reset successful. Redirecting to login...');
       setTimeout(() => navigate('/login'), 700);
     } catch (err) {

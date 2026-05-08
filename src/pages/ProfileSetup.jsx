@@ -1,7 +1,171 @@
+import { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { userService } from '../services/apiService';
+import { useUser } from '../context/UserContext.jsx';
+import { getApiErrorMessage } from '../utils/errors';
+
 const backgroundImageUrl =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuDMz8ScvU_5mTOboT-iwVSBBpnCN-s9ros5qOnSGy5rrXQibzEP6vKyP-9H5_l5i31fvXhmRIYOLXYl319Dix6wiQE0RFb_Eo5jcTRK2L-I9x0FOeoRKvLMZnzNxJd-Z1W1hpjY2scV0Yxfx21WEaJ5NvmZ_P5AacT98DxnpFE6GStQzUMmELiZ5sy9H81JIQHv_WgwtrWGPWJQ0EG_suB_SNYL35ZRau8z8yCA4ExtnQv2U3y_pMPKTB4V9gtmOCKWcfkSXIX0DA';
 
+const preferenceOptions = [
+  { value: 'Travel', icon: 'flight' },
+  { value: 'Photography' },
+  { value: 'Food' },
+  { value: 'Lifestyle' },
+  { value: 'Tech', icon: 'devices' },
+  { value: 'Nature' },
+  { value: 'Architecture' },
+  { value: 'Minimalism' },
+];
+
+const extractProfile = (payload) => payload?.data || payload?.profile || null;
+
 const ProfileSetup = () => {
+  const navigate = useNavigate();
+  const { updateProfileState } = useUser();
+  const fileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [extraInfo, setExtraInfo] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState('');
+  const [coverFile, setCoverFile] = useState(null);
+  const [selectedPrefs, setSelectedPrefs] = useState(() => new Set());
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const preferenceList = useMemo(() => Array.from(selectedPrefs), [selectedPrefs]);
+
+  const handleFilePick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleCoverPick = () => {
+    coverInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be 5MB or less.');
+      return;
+    }
+
+    setError('');
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || '');
+      setAvatarPreview(result);
+      setAvatarFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCoverChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid cover image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Cover image must be 5MB or less.');
+      return;
+    }
+
+    setError('');
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || '');
+      setCoverPreview(result);
+      setCoverFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const togglePreference = (value) => {
+    setSelectedPrefs((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return next;
+    });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('username', username.trim());
+      formData.append('bio', bio);
+      formData.append('extraInfo', extraInfo);
+      formData.append('preferences', JSON.stringify(preferenceList));
+      formData.append('isFirstLogin', 'false');
+      formData.append('profileCompleted', 'true');
+
+      if (avatarFile) {
+        formData.append('profilePicture', avatarFile);
+      }
+
+      if (coverFile) {
+        formData.append('coverImage', coverFile);
+      }
+
+      const response = await userService.setupProfile(formData);
+      const updatedProfile = extractProfile(response);
+      if (updatedProfile) {
+        updateProfileState(updatedProfile);
+      }
+
+      navigate('/profile', { replace: true });
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to complete profile.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('isFirstLogin', 'false');
+      formData.append('profileCompleted', 'true');
+
+      const response = await userService.setupProfile(formData);
+      const updatedProfile = extractProfile(response);
+      if (updatedProfile) {
+        updateProfileState(updatedProfile);
+      }
+      navigate('/profile', { replace: true });
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to skip profile setup.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-background text-on-background antialiased">
       <div
@@ -26,27 +190,73 @@ const ProfileSetup = () => {
               </p>
             </header>
 
-            <form className="flex flex-col gap-8">
+            <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
               <div className="flex flex-col items-center justify-center">
                 <div className="group flex cursor-pointer flex-col items-center">
-                  <div className="relative mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-outline-variant bg-surface-container-low transition-all group-hover:border-primary-container group-hover:bg-surface-container">
-                    <span
-                      className="material-symbols-outlined text-4xl text-on-surface-variant transition-colors group-hover:text-primary-container"
-                      aria-hidden="true"
-                    >
-                      add_a_photo
-                    </span>
+                  <button
+                    className="relative mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-outline-variant bg-surface-container-low transition-all group-hover:border-primary-container group-hover:bg-surface-container"
+                    type="button"
+                    onClick={handleFilePick}
+                  >
+                    {avatarPreview ? (
+                      <img
+                        alt="Profile preview"
+                        className="h-full w-full object-cover"
+                        src={avatarPreview}
+                      />
+                    ) : (
+                      <span
+                        className="material-symbols-outlined text-4xl text-on-surface-variant transition-colors group-hover:text-primary-container"
+                        aria-hidden="true"
+                      >
+                        add_a_photo
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-primary-container/5 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
+                  </button>
                   <button
                     className="flex items-center gap-2 font-label-md text-label-md text-primary-container transition-colors hover:text-primary"
                     type="button"
+                    onClick={handleFilePick}
                   >
                     <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
                       upload
                     </span>
                     Add Profile Photo
                   </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <button
+                    className="mt-4 flex items-center gap-2 font-label-md text-label-md text-primary-container transition-colors hover:text-primary"
+                    type="button"
+                    onClick={handleCoverPick}
+                  >
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                      panorama
+                    </span>
+                    Add Cover Photo
+                  </button>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleCoverChange}
+                  />
+                  {coverPreview ? (
+                    <div className="mt-3 w-full overflow-hidden rounded-xl border border-outline-variant">
+                      <img
+                        alt="Cover preview"
+                        className="h-24 w-full object-cover"
+                        src={coverPreview}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -61,6 +271,9 @@ const ProfileSetup = () => {
                     name="username"
                     placeholder="@yourname"
                     type="text"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    required
                   />
                 </div>
 
@@ -74,12 +287,14 @@ const ProfileSetup = () => {
                     name="bio"
                     placeholder="Photographer, traveler, coffee enthusiast..."
                     rows={3}
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="ml-1 font-label-sm text-label-sm text-on-surface" htmlFor="website">
-                    Website or Portfolio Link
+                  <label className="ml-1 font-label-sm text-label-sm text-on-surface" htmlFor="extraInfo">
+                    Extra info
                   </label>
                   <div className="relative">
                     <span
@@ -90,10 +305,12 @@ const ProfileSetup = () => {
                     </span>
                     <input
                       className="w-full rounded-xl border border-surface-variant bg-surface-container-low py-3 pl-11 pr-4 font-body-md text-body-md text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-container"
-                      id="website"
-                      name="website"
-                      placeholder="https://"
-                      type="url"
+                      id="extraInfo"
+                      name="extraInfo"
+                      placeholder="Website, location, or anything else"
+                      type="text"
+                      value={extraInfo}
+                      onChange={(event) => setExtraInfo(event.target.value)}
                     />
                   </div>
                 </div>
@@ -104,65 +321,48 @@ const ProfileSetup = () => {
                   What do you love capturing?
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    className="flex items-center gap-1 rounded-full bg-primary-container px-4 py-2 font-label-md text-label-md text-white shadow-sm transition-transform active:scale-95"
-                    type="button"
-                  >
-                    <span
-                      className="material-symbols-outlined text-[16px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                      aria-hidden="true"
-                    >
-                      flight
-                    </span>
-                    Travel
-                  </button>
-                  <button
-                    className="rounded-full border border-transparent bg-secondary-container/50 px-4 py-2 font-label-md text-label-md text-on-surface-variant transition-all hover:border-surface-variant hover:bg-secondary-container hover:text-on-surface active:scale-95"
-                    type="button"
-                  >
-                    Photography
-                  </button>
-                  <button
-                    className="rounded-full border border-transparent bg-secondary-container/50 px-4 py-2 font-label-md text-label-md text-on-surface-variant transition-all hover:border-surface-variant hover:bg-secondary-container hover:text-on-surface active:scale-95"
-                    type="button"
-                  >
-                    Food
-                  </button>
-                  <button
-                    className="rounded-full border border-transparent bg-secondary-container/50 px-4 py-2 font-label-md text-label-md text-on-surface-variant transition-all hover:border-surface-variant hover:bg-secondary-container hover:text-on-surface active:scale-95"
-                    type="button"
-                  >
-                    Lifestyle
-                  </button>
-                  <button
-                    className="flex items-center gap-1 rounded-full bg-primary-container px-4 py-2 font-label-md text-label-md text-white shadow-sm transition-transform active:scale-95"
-                    type="button"
-                  >
-                    <span
-                      className="material-symbols-outlined text-[16px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                      aria-hidden="true"
-                    >
-                      devices
-                    </span>
-                    Tech
-                  </button>
-                  <button
-                    className="rounded-full border border-transparent bg-secondary-container/50 px-4 py-2 font-label-md text-label-md text-on-surface-variant transition-all hover:border-surface-variant hover:bg-secondary-container hover:text-on-surface active:scale-95"
-                    type="button"
-                  >
-                    Nature
-                  </button>
+                  {preferenceOptions.map((option) => {
+                    const isSelected = selectedPrefs.has(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        className={
+                          isSelected
+                            ? 'flex items-center gap-1 rounded-full bg-primary-container px-4 py-2 font-label-md text-label-md text-white shadow-sm transition-transform active:scale-95'
+                            : 'rounded-full border border-transparent bg-secondary-container/50 px-4 py-2 font-label-md text-label-md text-on-surface-variant transition-all hover:border-surface-variant hover:bg-secondary-container hover:text-on-surface active:scale-95'
+                        }
+                        type="button"
+                        onClick={() => togglePreference(option.value)}
+                      >
+                        {option.icon ? (
+                          <span
+                            className="material-symbols-outlined text-[16px]"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                            aria-hidden="true"
+                          >
+                            {option.icon}
+                          </span>
+                        ) : null}
+                        {option.value}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {error ? (
+                <div className="rounded-xl border border-error/30 bg-error-container px-4 py-3 font-body-sm text-body-sm text-on-error-container">
+                  {error}
+                </div>
+              ) : null}
 
               <div className="mt-6 flex flex-col gap-4">
                 <button
                   className="flex w-full items-center justify-center gap-2 rounded-xl border-b-2 border-[#D64348] bg-primary-container py-4 text-center font-label-md text-label-md text-white shadow-[0_4px_14px_0_rgba(255,90,95,0.25)] transition-all hover:bg-[#E04E53] active:scale-[0.98]"
-                  type="button"
+                  type="submit"
+                  disabled={isSubmitting}
                 >
-                  Complete Profile
+                  {isSubmitting ? 'Saving...' : 'Complete Profile'}
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
                     arrow_forward
                   </span>
@@ -170,6 +370,8 @@ const ProfileSetup = () => {
                 <button
                   className="w-full border-none bg-transparent py-3 text-center font-label-md text-label-md text-on-surface-variant transition-colors hover:text-on-surface"
                   type="button"
+                  onClick={handleSkip}
+                  disabled={isSubmitting}
                 >
                   Skip for now
                 </button>

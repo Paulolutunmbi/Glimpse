@@ -1,22 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import API from '../api/axios';
-import { socket } from '../socket';
+import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
+import { useUser } from '../context/UserContext.jsx';
 
 const desktopImage =
   'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=85';
 
 const mobileImage =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBoN-1zipTGXT_OhwPZHP6MqFs-uP9n0iKOFSwcn54rk2zab5dNcBWyVK5GXSLGD85GKN4dYwLfJ0BK2vPjBGetmUVloGX17zOSJQK_Dsh5qyexSmI8MZSDcDX_6Nzb34axEKaerHvtRwgY_lbmOSJPzJTsk20Qn_H1cLKgkQnzKUeieJbVYV8TsOy201YaxWOeNvYOm7WEEp0G6nb7tTMxQv5FVf7dzgQWU_mAqSiYR86l93j5b607gTIhlccPqW4jeELZ_s29mA';
-
-const getEventCount = (payload) => {
-  if (typeof payload?.count === 'number') return payload.count;
-  if (typeof payload?.total === 'number') return payload.total;
-  if (typeof payload?.newGlimpses === 'number') return payload.newGlimpses;
-
-  return null;
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,55 +24,9 @@ const Login = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(location.state?.notice || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [glimpseCount, setGlimpseCount] = useState(0);
-  const [lastGlimpseAt, setLastGlimpseAt] = useState(null);
-  const [isLiveConnected, setIsLiveConnected] = useState(socket.connected);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
-
-  useEffect(() => {
-    const tick = window.setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(tick);
-  }, []);
-
-  useEffect(() => {
-    const handleConnect = () => setIsLiveConnected(true);
-    const handleDisconnect = () => setIsLiveConnected(false);
-    const handleNewGlimpse = (payload) => {
-      const nextCount = getEventCount(payload);
-
-      setGlimpseCount((count) => nextCount ?? count + 1);
-      setLastGlimpseAt(Date.now());
-    };
-
-    const eventNames = ['newGlimpse', 'glimpseCreated', 'newPost', 'postCreated'];
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    eventNames.forEach((eventName) => socket.on(eventName, handleNewGlimpse));
-
-    return () => {
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-      eventNames.forEach((eventName) => socket.off(eventName, handleNewGlimpse));
-    };
-  }, []);
-
-  const secondsSinceLastGlimpse = lastGlimpseAt
-    ? Math.max(0, Math.floor((currentTime - lastGlimpseAt) / 1000))
-    : null;
-  const activityLabel = !isLiveConnected
-    ? 'connecting...'
-    : secondsSinceLastGlimpse === null
-      ? 'live now'
-      : secondsSinceLastGlimpse < 5
-        ? 'just now'
-        : `${secondsSinceLastGlimpse}s ago`;
-  const glimpseCountLabel =
-    glimpseCount > 0
-      ? `${glimpseCount.toLocaleString()} new ${glimpseCount === 1 ? 'glimpse' : 'glimpses'}`
-      : 'Live glimpses';
+  const { setAuthToken, refreshUser } = useUser();
+  const activityLabel = 'discover what your circle shared';
+  const glimpseCountLabel = 'Fresh moments waiting';
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -90,18 +36,19 @@ const Login = () => {
 
     try {
       const payload = { email: email.trim(), password };
-      const response = await API.post('/api/auth/login', payload);
-      const data = response?.data;
+      const data = await authService.login(payload);
       const token = data?.token || data?.data?.token || data?.accessToken || data?.jwt;
+      const redirectTo = data?.redirectTo || data?.data?.redirectTo || '/profile';
 
       if (token) {
-        localStorage.setItem('token', token);
+        setAuthToken(token);
         localStorage.removeItem('pendingEmail');
+        await refreshUser();
       }
 
       setSuccess('Login successful. Redirecting...');
       setTimeout(() => {
-        navigate('/');
+        navigate(redirectTo, { replace: true });
       }, 500);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
