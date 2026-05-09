@@ -16,43 +16,35 @@ const preferenceOptions = [
   'Tech',
 ];
 
-const extractProfile = (payload) => payload?.data || payload?.profile || null;
+const extractUser = (payload) => payload?.data?.user || payload?.user || null;
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { profile, updateProfileState, isProfileLoading } = useUser();
+  const { user, updateUser } = useUser();
   const fileInputRef = useRef(null);
-  const coverInputRef = useRef(null);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [extraInfo, setExtraInfo] = useState('');
   const [selectedPrefs, setSelectedPrefs] = useState(() => new Set());
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState('');
-  const [coverFile, setCoverFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!profile) return;
-    setUsername(profile.user?.username || profile.user?.name || '');
-    setBio(profile.profile?.bio || '');
-    setExtraInfo(profile.profile?.extraInfo || '');
-    setSelectedPrefs(new Set(profile.profile?.preferences || []));
-    setAvatarPreview(profile.profile?.avatar || '');
-    setCoverPreview(profile.profile?.coverImage || '');
-  }, [profile]);
+    if (!user) return;
+    setUsername(user.username || user.name || '');
+    setBio(user.bio || '');
+    setExtraInfo(user.extraInfo || '');
+    setSelectedPrefs(new Set(user.preferences || []));
+    setAvatarPreview(user.profilePicture || user.avatar || '');
+  }, [user]);
 
   const preferenceList = useMemo(() => Array.from(selectedPrefs), [selectedPrefs]);
 
   const handleFilePick = () => {
     fileInputRef.current?.click();
-  };
-
-  const handleCoverPick = () => {
-    coverInputRef.current?.click();
   };
 
   const handleAvatarChange = (event) => {
@@ -80,31 +72,6 @@ const Settings = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCoverChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid cover image file.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Cover image must be 5MB or less.');
-      return;
-    }
-
-    setError('');
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = String(reader.result || '');
-      setCoverPreview(result);
-      setCoverFile(file);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const togglePreference = (value) => {
     setSelectedPrefs((prev) => {
       const next = new Set(prev);
@@ -124,28 +91,26 @@ const Settings = () => {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append('username', username.trim());
-      formData.append('bio', bio);
-      formData.append('extraInfo', extraInfo);
-      formData.append('preferences', JSON.stringify(preferenceList));
+      let updatedUser = null;
 
       if (avatarFile) {
-        formData.append('profilePicture', avatarFile);
+        const avatarResponse = await userService.uploadAvatar({ file: avatarFile });
+        updatedUser = extractUser(avatarResponse);
       }
 
-      if (coverFile) {
-        formData.append('coverImage', coverFile);
-      }
+      const response = await userService.updateProfile({
+        username: username.trim(),
+        bio,
+        extraInfo,
+        preferences: preferenceList,
+      });
+      updatedUser = extractUser(response) || updatedUser;
 
-      const response = await userService.updateProfile(formData);
-      const updatedProfile = extractProfile(response);
-      if (updatedProfile) {
-        updateProfileState(updatedProfile);
+      if (updatedUser) {
+        updateUser(updatedUser);
       }
 
       setAvatarFile(null);
-      setCoverFile(null);
       setSuccess('Settings saved successfully.');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to update settings.'));
@@ -244,47 +209,9 @@ const Settings = () => {
                   className="hidden"
                   onChange={handleAvatarChange}
                 />
-                <button
-                  className="mt-4 font-label-md text-label-md text-primary-container transition-colors hover:text-surface-tint"
-                  type="button"
-                  onClick={handleCoverPick}
-                >
-                  Change Cover
-                </button>
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleCoverChange}
-                />
               </div>
 
               <div className="w-full flex-1 space-y-md">
-                <div>
-                  <label
-                    className="mb-xs block font-label-md text-label-md text-on-surface-variant"
-                    htmlFor="coverPreview"
-                  >
-                    Cover preview
-                  </label>
-                  <div
-                    id="coverPreview"
-                    className="h-32 w-full overflow-hidden rounded-lg border border-outline-variant bg-surface-variant"
-                  >
-                    {coverPreview ? (
-                      <img
-                        alt="Cover preview"
-                        className="h-full w-full object-cover"
-                        src={coverPreview}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-on-surface-variant">
-                        No cover image yet
-                      </div>
-                    )}
-                  </div>
-                </div>
                 <div>
                   <label
                     className="mb-xs block font-label-md text-label-md text-on-surface-variant"
@@ -409,7 +336,7 @@ const Settings = () => {
             <button
               className="rounded-lg border-b-2 border-surface-tint bg-primary-container px-8 py-3 font-label-md text-label-md text-white shadow-sm transition-colors duration-150 hover:bg-surface-tint active:scale-95"
               type="submit"
-              disabled={isSubmitting || isProfileLoading}
+              disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>

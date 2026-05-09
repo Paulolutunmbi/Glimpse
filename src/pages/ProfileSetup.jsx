@@ -18,20 +18,17 @@ const preferenceOptions = [
   { value: 'Minimalism' },
 ];
 
-const extractProfile = (payload) => payload?.data || payload?.profile || null;
+const extractUser = (payload) => payload?.data?.user || payload?.user || null;
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
-  const { updateProfileState } = useUser();
+  const { updateUser } = useUser();
   const fileInputRef = useRef(null);
-  const coverInputRef = useRef(null);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [extraInfo, setExtraInfo] = useState('');
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState('');
-  const [coverFile, setCoverFile] = useState(null);
   const [selectedPrefs, setSelectedPrefs] = useState(() => new Set());
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,10 +37,6 @@ const ProfileSetup = () => {
 
   const handleFilePick = () => {
     fileInputRef.current?.click();
-  };
-
-  const handleCoverPick = () => {
-    coverInputRef.current?.click();
   };
 
   const handleAvatarChange = (event) => {
@@ -71,31 +64,6 @@ const ProfileSetup = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCoverChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid cover image file.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Cover image must be 5MB or less.');
-      return;
-    }
-
-    setError('');
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = String(reader.result || '');
-      setCoverPreview(result);
-      setCoverFile(file);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const togglePreference = (value) => {
     setSelectedPrefs((prev) => {
       const next = new Set(prev);
@@ -114,26 +82,25 @@ const ProfileSetup = () => {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append('username', username.trim());
-      formData.append('bio', bio);
-      formData.append('extraInfo', extraInfo);
-      formData.append('preferences', JSON.stringify(preferenceList));
-      formData.append('isFirstLogin', 'false');
-      formData.append('profileCompleted', 'true');
+      let updatedUser = null;
 
       if (avatarFile) {
-        formData.append('profilePicture', avatarFile);
+        const avatarResponse = await userService.uploadAvatar({ file: avatarFile });
+        updatedUser = extractUser(avatarResponse);
       }
 
-      if (coverFile) {
-        formData.append('coverImage', coverFile);
-      }
+      const response = await userService.updateProfile({
+        username: username.trim(),
+        bio,
+        extraInfo,
+        preferences: preferenceList,
+        isFirstLogin: false,
+        profileCompleted: true,
+      });
+      updatedUser = extractUser(response) || updatedUser;
 
-      const response = await userService.setupProfile(formData);
-      const updatedProfile = extractProfile(response);
-      if (updatedProfile) {
-        updateProfileState(updatedProfile);
+      if (updatedUser) {
+        updateUser(updatedUser);
       }
 
       navigate('/profile', { replace: true });
@@ -149,14 +116,13 @@ const ProfileSetup = () => {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append('isFirstLogin', 'false');
-      formData.append('profileCompleted', 'true');
-
-      const response = await userService.setupProfile(formData);
-      const updatedProfile = extractProfile(response);
-      if (updatedProfile) {
-        updateProfileState(updatedProfile);
+      const response = await userService.updateProfile({
+        isFirstLogin: false,
+        profileCompleted: false,
+      });
+      const updatedUser = extractUser(response);
+      if (updatedUser) {
+        updateUser(updatedUser);
       }
       navigate('/profile', { replace: true });
     } catch (err) {
@@ -231,32 +197,6 @@ const ProfileSetup = () => {
                     className="hidden"
                     onChange={handleAvatarChange}
                   />
-                  <button
-                    className="mt-4 flex items-center gap-2 font-label-md text-label-md text-primary-container transition-colors hover:text-primary"
-                    type="button"
-                    onClick={handleCoverPick}
-                  >
-                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
-                      panorama
-                    </span>
-                    Add Cover Photo
-                  </button>
-                  <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleCoverChange}
-                  />
-                  {coverPreview ? (
-                    <div className="mt-3 w-full overflow-hidden rounded-xl border border-outline-variant">
-                      <img
-                        alt="Cover preview"
-                        className="h-24 w-full object-cover"
-                        src={coverPreview}
-                      />
-                    </div>
-                  ) : null}
                 </div>
               </div>
 

@@ -4,11 +4,11 @@ import { useUser } from '../context/UserContext.jsx';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, profile, isProfileLoading } = useUser();
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState('posts');
 
-  const posts = profile?.posts || [];
-  const savedPosts = profile?.savedPosts || [];
+  const posts = user?.posts || [];
+  const savedPosts = user?.savedPosts || [];
   const gridItems = useMemo(() => (activeTab === 'saved' ? savedPosts : posts), [
     activeTab,
     posts,
@@ -16,32 +16,9 @@ const Profile = () => {
   ]);
 
   const avatar =
-    profile?.profile?.avatar ||
+    user?.profilePicture ||
+    user?.avatar ||
     '/images/glimpse-icon.png';
-  const coverImage = profile?.profile?.coverImage || '';
-  const stats = profile?.stats;
-  const displayName = profile?.user?.fullName || profile?.user?.name || profile?.user?.username;
-  const username = profile?.user?.username || user?.username || 'glimpse';
-  const bio = profile?.profile?.bio || '';
-  const followersCount = stats?.followersCount ?? profile?.relations?.followers?.length ?? 0;
-  const followingCount = stats?.followingCount ?? profile?.relations?.following?.length ?? 0;
-  const postsCount = stats?.postsCount ?? posts.length;
-
-  if (isProfileLoading && !profile) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
-        Loading profile...
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
-        Profile unavailable.
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
@@ -60,19 +37,6 @@ const Profile = () => {
       </header>
 
       <main className="mx-auto mt-xl max-w-[1200px] px-margin_mobile md:px-margin_desktop">
-        <div className="mb-xl overflow-hidden rounded-3xl border border-outline-variant/40 bg-surface-container-lowest">
-          <div className="relative h-40 w-full md:h-56">
-            {coverImage ? (
-              <img
-                alt="Profile cover"
-                className="h-full w-full object-cover"
-                src={coverImage}
-              />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-surface-container to-surface-container-high" />
-            )}
-          </div>
-        </div>
         <section className="mb-xxl flex w-full flex-col items-center text-center">
           <div className="mb-md">
             <img
@@ -82,16 +46,14 @@ const Profile = () => {
             />
           </div>
           <h1 className="mb-xs font-h1 text-h1 text-on-surface">
-            {displayName || 'Glimpse Creator'}
+            {user?.fullName || user?.name || user?.username || 'Glimpse Creator'}
           </h1>
           <p className="mb-md font-body-md text-body-md text-on-surface-variant">
-            @{username}
+            @{user?.username || user?.name || 'glimpse'}
           </p>
-          {bio ? (
-            <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
-              {bio}
-            </p>
-          ) : null}
+          <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
+            {user?.bio || 'Tell the world what inspires you.'}
+          </p>
           <div className="mb-xl flex flex-wrap justify-center gap-md">
             <button
               className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95"
@@ -110,19 +72,19 @@ const Profile = () => {
 
           <div className="flex w-full max-w-lg justify-center gap-xxl border-t border-outline-variant/30 pt-lg">
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{postsCount}</span>
+              <span className="font-h3 text-h3 text-on-surface">{posts.length}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Moments
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{followersCount}</span>
+              <span className="font-h3 text-h3 text-on-surface">{user?.followers?.length || 0}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Followers
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{followingCount}</span>
+              <span className="font-h3 text-h3 text-on-surface">{user?.following?.length || 0}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Following
               </span>
@@ -158,11 +120,7 @@ const Profile = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-[2px] md:gap-md">
-          {isProfileLoading ? (
-            <div className="col-span-3 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-10 text-center text-on-surface-variant">
-              Loading profile...
-            </div>
-          ) : gridItems.length ? (
+          {gridItems.length ? (
             gridItems.map((item) => (
               <div
                 key={item._id || item.id || item.image}

@@ -31,12 +31,8 @@ export const authService = {
 };
 
 export const postService = {
-    getAllPosts: async (params = {}) => {
-        const response = await api.get('/api/posts', { params });
-        return response.data;
-    },
-    getTopics: async () => {
-        const response = await api.get('/api/posts/topics');
+    getAllPosts: async () => {
+        const response = await api.get('/api/posts');
         return response.data;
     },
     createPost: async (payload) => {
@@ -45,10 +41,6 @@ export const postService = {
     },
     toggleLike: async (postId) => {
         const response = await api.put(`/api/posts/${postId}/like`);
-        return response.data;
-    },
-    toggleSave: async (postId) => {
-        const response = await api.put(`/api/posts/${postId}/save`);
         return response.data;
     },
 };
@@ -77,46 +69,8 @@ export const userService = {
         const response = await api.get('/api/user/me');
         return response.data;
     },
-    getProfileById: async (userId) => {
-        const response = await api.get(`/api/user/profile/${userId}`);
-        return response.data;
-    },
     updateProfile: async (payload) => {
-        if (payload instanceof FormData) {
-            const response = await api.patch('/api/user/update-profile', payload);
-            return response.data;
-        }
-
-        const formData = new FormData();
-        Object.entries(payload || {}).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-                formData.append(key, JSON.stringify(value));
-                return;
-            }
-            if (value !== undefined && value !== null) {
-                formData.append(key, value);
-            }
-        });
-
-        const response = await api.patch('/api/user/update-profile', formData);
-        return response.data;
-    },
-    setupProfile: async (payload) => {
-        const formData = payload instanceof FormData ? payload : new FormData();
-
-        if (!(payload instanceof FormData)) {
-            Object.entries(payload || {}).forEach(([key, value]) => {
-                if (Array.isArray(value)) {
-                    formData.append(key, JSON.stringify(value));
-                    return;
-                }
-                if (value !== undefined && value !== null) {
-                    formData.append(key, value);
-                }
-            });
-        }
-
-        const response = await api.patch('/api/user/setup-profile', formData);
+        const response = await api.patch('/api/user/update', payload);
         return response.data;
     },
     uploadAvatar: async (payload) => {
@@ -137,14 +91,6 @@ export const userService = {
     },
     updatePreferences: async (payload) => {
         const response = await api.post('/api/user/preferences', payload);
-        return response.data;
-    },
-    toggleFollow: async (userId) => {
-        const response = await api.patch(`/api/user/follow/${userId}`);
-        return response.data;
-    },
-    getSuggestedCreators: async () => {
-        const response = await api.get('/api/user/suggested-creators');
         return response.data;
     },
     sendPasswordResetEmail: async () => {
