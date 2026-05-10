@@ -212,8 +212,8 @@ export const settingsService = {
         const response = await api.patch('/api/user/settings/appearance', payload);
         return response.data;
     },
-    logoutOtherSessions: async (payload) => {
-        const response = await api.post('/api/user/settings/logout-others', payload);
+    logoutOtherSessions: async () => {
+        const response = await api.post('/api/user/settings/logout-others');
         return response.data;
     },
     blockUser: async (payload) => {

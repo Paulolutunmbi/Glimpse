@@ -51,6 +51,7 @@ const Settings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingOutOthers, setIsLoggingOutOthers] = useState(false);
 
   useEffect(() => {
     if (!user && !profile) return;
@@ -186,14 +187,22 @@ const Settings = () => {
   };
 
   const handleLogoutOthers = async () => {
+    const confirmed = window.confirm(
+      'Are you sure? This will sign out all other devices using your account.'
+    );
+    if (!confirmed) return;
+
     setError('');
     setSuccess('');
+    setIsLoggingOutOthers(true);
     try {
-      const response = await settingsService.logoutOtherSessions({});
+      const response = await settingsService.logoutOtherSessions();
       const message = response?.message || 'Logged out of other sessions.';
       setSuccess(message);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to logout other sessions.'));
+      setError(getApiErrorMessage(err, 'Failed to logout other devices.'));
+    } finally {
+      setIsLoggingOutOthers(false);
     }
   };
 
@@ -543,11 +552,12 @@ const Settings = () => {
                 </p>
               </div>
               <button
-                className="whitespace-nowrap rounded-lg border border-outline-variant px-6 py-2 font-label-md text-label-md text-on-surface transition-colors duration-150 hover:bg-surface-container active:scale-95"
+                className="whitespace-nowrap rounded-lg border border-outline-variant px-6 py-2 font-label-md text-label-md text-on-surface transition-colors duration-150 hover:bg-surface-container active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 onClick={handleLogoutOthers}
+                disabled={isLoggingOutOthers}
               >
-                Logout Others
+                {isLoggingOutOthers ? 'Logging out...' : 'Logout all other devices'}
               </button>
             </div>
           </section>
