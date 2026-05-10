@@ -90,12 +90,24 @@ export default function Home() {
       );
     };
 
+    const handlePostDeleted = (payload) => {
+      const postId = payload?.postId || payload?.id;
+      if (!postId) return;
+      setPosts((prev) => prev.filter((item) => item._id !== postId && item.id !== postId));
+    };
+
     socket.on('post:created', handlePostCreated);
+    socket.on('postCreated', handlePostCreated);
     socket.on('post:liked', handlePostLiked);
+    socket.on('postLiked', handlePostLiked);
+    socket.on('postDeleted', handlePostDeleted);
 
     return () => {
       socket.off('post:created', handlePostCreated);
+      socket.off('postCreated', handlePostCreated);
       socket.off('post:liked', handlePostLiked);
+      socket.off('postLiked', handlePostLiked);
+      socket.off('postDeleted', handlePostDeleted);
     };
   }, [currentUserId]);
 

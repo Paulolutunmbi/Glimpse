@@ -18,11 +18,11 @@ const preferenceOptions = [
   { value: 'Minimalism' },
 ];
 
-const extractUser = (payload) => payload?.data?.user || payload?.user || null;
+const extractProfilePayload = (payload) => payload?.data || payload || null;
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
-  const { updateUser } = useUser();
+  const { updateUser, updateProfilePayload } = useUser();
   const fileInputRef = useRef(null);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -82,11 +82,11 @@ const ProfileSetup = () => {
     setIsSubmitting(true);
 
     try {
-      let updatedUser = null;
+      let updatedPayload = null;
 
       if (avatarFile) {
         const avatarResponse = await userService.uploadAvatar({ file: avatarFile });
-        updatedUser = extractUser(avatarResponse);
+        updatedPayload = extractProfilePayload(avatarResponse);
       }
 
       const response = await userService.updateProfile({
@@ -97,10 +97,13 @@ const ProfileSetup = () => {
         isFirstLogin: false,
         profileCompleted: true,
       });
-      updatedUser = extractUser(response) || updatedUser;
+      updatedPayload = extractProfilePayload(response) || updatedPayload;
 
-      if (updatedUser) {
-        updateUser(updatedUser);
+      if (updatedPayload) {
+        updateProfilePayload(updatedPayload);
+        if (updatedPayload.user) {
+          updateUser(updatedPayload.user);
+        }
       }
 
       navigate('/profile', { replace: true });
@@ -120,9 +123,12 @@ const ProfileSetup = () => {
         isFirstLogin: false,
         profileCompleted: false,
       });
-      const updatedUser = extractUser(response);
-      if (updatedUser) {
-        updateUser(updatedUser);
+      const updatedPayload = extractProfilePayload(response);
+      if (updatedPayload) {
+        updateProfilePayload(updatedPayload);
+        if (updatedPayload.user) {
+          updateUser(updatedPayload.user);
+        }
       }
       navigate('/profile', { replace: true });
     } catch (err) {

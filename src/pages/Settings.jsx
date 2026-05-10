@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userService } from '../services/apiService';
+import { settingsService, userService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { getApiErrorMessage } from '../utils/errors';
 
@@ -16,11 +16,11 @@ const preferenceOptions = [
   'Tech',
 ];
 
-const extractUser = (payload) => payload?.data?.user || payload?.user || null;
+const extractProfilePayload = (payload) => payload?.data || payload || null;
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, updateUser } = useUser();
+  const { user, profile, updateUser, updateProfilePayload } = useUser();
   const fileInputRef = useRef(null);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -28,18 +28,61 @@ const Settings = () => {
   const [selectedPrefs, setSelectedPrefs] = useState(() => new Set());
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
+  const [privacy, setPrivacy] = useState({
+    profileVisibility: 'public',
+    showEmail: false,
+    allowMessages: 'followers',
+    allowTagging: 'followers',
+    activityVisibility: 'followers',
+  });
+  const [notifications, setNotifications] = useState({
+    emailNotifications: true,
+    pushNotifications: false,
+    commentNotifications: true,
+    likeNotifications: true,
+    followNotifications: true,
+    marketingEmails: false,
+  });
+  const [appearance, setAppearance] = useState({
+    theme: 'system',
+    reducedMotion: false,
+    compactMode: false,
+  });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    setUsername(user.username || user.name || '');
-    setBio(user.bio || '');
-    setExtraInfo(user.extraInfo || '');
-    setSelectedPrefs(new Set(user.preferences || []));
-    setAvatarPreview(user.profilePicture || user.avatar || '');
-  }, [user]);
+    if (!user && !profile) return;
+    setUsername(user?.username || user?.name || '');
+    setBio(profile?.bio || user?.bio || '');
+    setExtraInfo(profile?.extraInfo || user?.extraInfo || '');
+    setSelectedPrefs(new Set(profile?.preferences || user?.preferences || []));
+    setAvatarPreview(profile?.avatar || user?.profilePicture || user?.avatar || '');
+  }, [user, profile]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const response = await settingsService.getSettings();
+        const settings = response?.data?.settings || response?.settings;
+        if (!settings || !isMounted) return;
+        setPrivacy((prev) => ({ ...prev, ...(settings.privacy || {}) }));
+        setNotifications((prev) => ({ ...prev, ...(settings.notifications || {}) }));
+        setAppearance((prev) => ({ ...prev, ...(settings.appearance || {}) }));
+      } catch (err) {
+        setError(getApiErrorMessage(err, 'Failed to load settings.'));
+      }
+    };
+
+    loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const preferenceList = useMemo(() => Array.from(selectedPrefs), [selectedPrefs]);
 
@@ -91,11 +134,11 @@ const Settings = () => {
     setIsSubmitting(true);
 
     try {
-      let updatedUser = null;
+      let updatedPayload = null;
 
       if (avatarFile) {
         const avatarResponse = await userService.uploadAvatar({ file: avatarFile });
-        updatedUser = extractUser(avatarResponse);
+        updatedPayload = extractProfilePayload(avatarResponse);
       }
 
       const response = await userService.updateProfile({
@@ -104,14 +147,26 @@ const Settings = () => {
         extraInfo,
         preferences: preferenceList,
       });
-      updatedUser = extractUser(response) || updatedUser;
+      updatedPayload = extractProfilePayload(response) || updatedPayload;
 
-      if (updatedUser) {
-        updateUser(updatedUser);
+      const settingsResponse = await settingsService.updateSettings({
+        privacy,
+        notifications,
+        appearance,
+      });
+
+      if (settingsResponse?.data?.settings || settingsResponse?.settings) {
+        setSuccess('Settings saved successfully.');
+      }
+
+      if (updatedPayload) {
+        updateProfilePayload(updatedPayload);
+        if (updatedPayload.user) {
+          updateUser(updatedPayload.user);
+        }
       }
 
       setAvatarFile(null);
-      setSuccess('Settings saved successfully.');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to update settings.'));
     } finally {
@@ -127,6 +182,18 @@ const Settings = () => {
       setSuccess(response?.message || 'Reset link sent to your email.');
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to send reset email.'));
+    }
+  };
+
+  const handleLogoutOthers = async () => {
+    setError('');
+    setSuccess('');
+    try {
+      const response = await settingsService.logoutOtherSessions({});
+      const message = response?.message || 'Logged out of other sessions.';
+      setSuccess(message);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to logout other sessions.'));
     }
   };
 
@@ -295,6 +362,163 @@ const Settings = () => {
           </section>
 
           <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-lg shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]">
+            <h2 className="mb-sm font-h3 text-h3 text-on-surface">Privacy</h2>
+            <div className="grid gap-md md:grid-cols-2">
+              <div>
+                <label className="mb-xs block font-label-md text-label-md text-on-surface-variant">
+                  Profile visibility
+                </label>
+                <select
+                  className="w-full rounded-lg border border-outline-variant bg-surface-bright px-3 py-2 font-body-md text-body-md"
+                  value={privacy.profileVisibility}
+                  onChange={(event) =>
+                    setPrivacy((prev) => ({ ...prev, profileVisibility: event.target.value }))
+                  }
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-xs block font-label-md text-label-md text-on-surface-variant">
+                  Who can message you
+                </label>
+                <select
+                  className="w-full rounded-lg border border-outline-variant bg-surface-bright px-3 py-2 font-body-md text-body-md"
+                  value={privacy.allowMessages}
+                  onChange={(event) =>
+                    setPrivacy((prev) => ({ ...prev, allowMessages: event.target.value }))
+                  }
+                >
+                  <option value="everyone">Everyone</option>
+                  <option value="followers">Followers</option>
+                  <option value="none">No one</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-xs block font-label-md text-label-md text-on-surface-variant">
+                  Who can tag you
+                </label>
+                <select
+                  className="w-full rounded-lg border border-outline-variant bg-surface-bright px-3 py-2 font-body-md text-body-md"
+                  value={privacy.allowTagging}
+                  onChange={(event) =>
+                    setPrivacy((prev) => ({ ...prev, allowTagging: event.target.value }))
+                  }
+                >
+                  <option value="everyone">Everyone</option>
+                  <option value="followers">Followers</option>
+                  <option value="none">No one</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-xs block font-label-md text-label-md text-on-surface-variant">
+                  Activity visibility
+                </label>
+                <select
+                  className="w-full rounded-lg border border-outline-variant bg-surface-bright px-3 py-2 font-body-md text-body-md"
+                  value={privacy.activityVisibility}
+                  onChange={(event) =>
+                    setPrivacy((prev) => ({ ...prev, activityVisibility: event.target.value }))
+                  }
+                >
+                  <option value="everyone">Everyone</option>
+                  <option value="followers">Followers</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+            </div>
+            <label className="mt-md flex items-center gap-sm font-body-sm text-body-sm text-on-surface">
+              <input
+                type="checkbox"
+                checked={privacy.showEmail}
+                onChange={(event) =>
+                  setPrivacy((prev) => ({ ...prev, showEmail: event.target.checked }))
+                }
+              />
+              Show my email on my profile
+            </label>
+          </section>
+
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-lg shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]">
+            <h2 className="mb-sm font-h3 text-h3 text-on-surface">Notifications</h2>
+            <div className="grid gap-sm md:grid-cols-2">
+              {[
+                { key: 'emailNotifications', label: 'Email notifications' },
+                { key: 'pushNotifications', label: 'Push notifications' },
+                { key: 'commentNotifications', label: 'Comment alerts' },
+                { key: 'likeNotifications', label: 'Like alerts' },
+                { key: 'followNotifications', label: 'Follow alerts' },
+                { key: 'marketingEmails', label: 'Product updates' },
+              ].map((item) => (
+                <label
+                  key={item.key}
+                  className="flex items-center gap-sm rounded-lg border border-outline-variant/30 bg-white px-3 py-2 text-on-surface"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(notifications[item.key])}
+                    onChange={(event) =>
+                      setNotifications((prev) => ({
+                        ...prev,
+                        [item.key]: event.target.checked,
+                      }))
+                    }
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-lg shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]">
+            <h2 className="mb-sm font-h3 text-h3 text-on-surface">Appearance</h2>
+            <div className="grid gap-md md:grid-cols-2">
+              <div>
+                <label className="mb-xs block font-label-md text-label-md text-on-surface-variant">
+                  Theme
+                </label>
+                <select
+                  className="w-full rounded-lg border border-outline-variant bg-surface-bright px-3 py-2 font-body-md text-body-md"
+                  value={appearance.theme}
+                  onChange={(event) =>
+                    setAppearance((prev) => ({ ...prev, theme: event.target.value }))
+                  }
+                >
+                  <option value="system">System</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+              <div className="flex flex-col justify-between gap-sm md:pt-7">
+                <label className="flex items-center gap-sm font-body-sm text-body-sm text-on-surface">
+                  <input
+                    type="checkbox"
+                    checked={appearance.reducedMotion}
+                    onChange={(event) =>
+                      setAppearance((prev) => ({
+                        ...prev,
+                        reducedMotion: event.target.checked,
+                      }))
+                    }
+                  />
+                  Reduce motion
+                </label>
+                <label className="flex items-center gap-sm font-body-sm text-body-sm text-on-surface">
+                  <input
+                    type="checkbox"
+                    checked={appearance.compactMode}
+                    onChange={(event) =>
+                      setAppearance((prev) => ({ ...prev, compactMode: event.target.checked }))
+                    }
+                  />
+                  Compact mode
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-lg shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]">
             <h2 className="mb-sm font-h3 text-h3 text-on-surface">Account Security</h2>
             <div className="mt-md flex flex-col justify-between gap-md border-t border-outline-variant/30 pt-md md:flex-row md:items-center">
               <div>
@@ -309,6 +533,21 @@ const Settings = () => {
                 onClick={handleResetPassword}
               >
                 Reset Password
+              </button>
+            </div>
+            <div className="mt-md flex flex-col justify-between gap-md border-t border-outline-variant/30 pt-md md:flex-row md:items-center">
+              <div>
+                <p className="font-label-md text-label-md text-on-surface">Sessions</p>
+                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                  Sign out other devices using your account.
+                </p>
+              </div>
+              <button
+                className="whitespace-nowrap rounded-lg border border-outline-variant px-6 py-2 font-label-md text-label-md text-on-surface transition-colors duration-150 hover:bg-surface-container active:scale-95"
+                type="button"
+                onClick={handleLogoutOthers}
+              >
+                Logout Others
               </button>
             </div>
           </section>

@@ -4,21 +4,22 @@ import { useUser } from '../context/UserContext.jsx';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, profile, stats, relations, posts, savedPosts } = useUser();
   const [activeTab, setActiveTab] = useState('posts');
 
-  const posts = user?.posts || [];
-  const savedPosts = user?.savedPosts || [];
   const gridItems = useMemo(() => (activeTab === 'saved' ? savedPosts : posts), [
     activeTab,
     posts,
     savedPosts,
   ]);
 
-  const avatar =
-    user?.profilePicture ||
-    user?.avatar ||
-    '/images/glimpse-icon.png';
+  const avatar = profile?.avatar || user?.profilePicture || user?.avatar || '/images/glimpse-icon.png';
+  const bio = profile?.bio || user?.bio || 'Tell the world what inspires you.';
+  const displayName = user?.fullName || user?.name || user?.username || 'Glimpse Creator';
+  const handle = user?.username || user?.name || 'glimpse';
+  const postsCount = stats?.postsCount ?? posts.length;
+  const followersCount = stats?.followersCount ?? relations?.followers?.length ?? 0;
+  const followingCount = stats?.followingCount ?? relations?.following?.length ?? 0;
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
@@ -45,14 +46,12 @@ const Profile = () => {
               src={avatar}
             />
           </div>
-          <h1 className="mb-xs font-h1 text-h1 text-on-surface">
-            {user?.fullName || user?.name || user?.username || 'Glimpse Creator'}
-          </h1>
+          <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
           <p className="mb-md font-body-md text-body-md text-on-surface-variant">
-            @{user?.username || user?.name || 'glimpse'}
+            @{handle}
           </p>
           <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
-            {user?.bio || 'Tell the world what inspires you.'}
+            {bio}
           </p>
           <div className="mb-xl flex flex-wrap justify-center gap-md">
             <button
@@ -72,19 +71,19 @@ const Profile = () => {
 
           <div className="flex w-full max-w-lg justify-center gap-xxl border-t border-outline-variant/30 pt-lg">
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{posts.length}</span>
+              <span className="font-h3 text-h3 text-on-surface">{postsCount}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Moments
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{user?.followers?.length || 0}</span>
+              <span className="font-h3 text-h3 text-on-surface">{followersCount}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Followers
               </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-h3 text-h3 text-on-surface">{user?.following?.length || 0}</span>
+              <span className="font-h3 text-h3 text-on-surface">{followingCount}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Following
               </span>

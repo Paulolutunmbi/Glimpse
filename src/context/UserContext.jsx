@@ -5,6 +5,11 @@ const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [relations, setRelations] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
@@ -18,13 +23,24 @@ export const UserProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await API.get('/api/user/me');
-      const nextUser = response?.data?.data?.user || response?.data?.user || null;
+      const payload = response?.data?.data || null;
+      const nextUser = payload?.user || response?.data?.user || null;
       setUser(nextUser);
+      setProfile(payload?.profile || null);
+      setStats(payload?.stats || null);
+      setRelations(payload?.relations || null);
+      setPosts(payload?.posts || []);
+      setSavedPosts(payload?.savedPosts || []);
       return nextUser;
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.removeItem('token');
         setUser(null);
+        setProfile(null);
+        setStats(null);
+        setRelations(null);
+        setPosts([]);
+        setSavedPosts([]);
       }
       return null;
     } finally {
@@ -39,6 +55,11 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthLogout(() => {
       setUser(null);
+      setProfile(null);
+      setStats(null);
+      setRelations(null);
+      setPosts([]);
+      setSavedPosts([]);
       setIsLoading(false);
     });
 
@@ -49,6 +70,11 @@ export const UserProvider = ({ children }) => {
     if (!token) {
       localStorage.removeItem('token');
       setUser(null);
+      setProfile(null);
+      setStats(null);
+      setRelations(null);
+      setPosts([]);
+      setSavedPosts([]);
       return;
     }
 
@@ -59,22 +85,56 @@ export const UserProvider = ({ children }) => {
     setUser(nextUser);
   }, []);
 
+  const updateProfilePayload = useCallback((payload) => {
+    if (!payload) return;
+    if (payload.user) setUser(payload.user);
+    if (payload.profile) setProfile(payload.profile);
+    if (payload.stats) setStats(payload.stats);
+    if (payload.relations) setRelations(payload.relations);
+    if (Array.isArray(payload.posts)) setPosts(payload.posts);
+    if (Array.isArray(payload.savedPosts)) setSavedPosts(payload.savedPosts);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
+    setProfile(null);
+    setStats(null);
+    setRelations(null);
+    setPosts([]);
+    setSavedPosts([]);
     setIsLoading(false);
   }, []);
 
   const value = useMemo(
     () => ({
       user,
+      profile,
+      stats,
+      relations,
+      posts,
+      savedPosts,
       isLoading,
       refreshUser,
       setAuthToken,
       updateUser,
+      updateProfilePayload,
       logout,
     }),
-    [user, isLoading, refreshUser, setAuthToken, updateUser, logout]
+    [
+      user,
+      profile,
+      stats,
+      relations,
+      posts,
+      savedPosts,
+      isLoading,
+      refreshUser,
+      setAuthToken,
+      updateUser,
+      updateProfilePayload,
+      logout,
+    ]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

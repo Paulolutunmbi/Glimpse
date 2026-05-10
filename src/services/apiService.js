@@ -43,6 +43,10 @@ export const postService = {
         const response = await api.put(`/api/posts/${postId}/like`);
         return response.data;
     },
+    deletePost: async (postId) => {
+        const response = await api.delete(`/api/posts/${postId}`);
+        return response.data;
+    },
 };
 
 export const commentService = {
@@ -69,6 +73,14 @@ export const userService = {
         const response = await api.get('/api/user/me');
         return response.data;
     },
+    getProfile: async (userId) => {
+        const response = await api.get(`/api/user/profile/${userId}`);
+        return response.data;
+    },
+    getProfileStats: async (userId) => {
+        const response = await api.get(`/api/user/profile/${userId}/stats`);
+        return response.data;
+    },
     updateProfile: async (payload) => {
         const response = await api.patch('/api/user/update', payload);
         return response.data;
@@ -89,12 +101,87 @@ export const userService = {
         const response = await api.post('/api/user/upload-avatar', payload);
         return response.data;
     },
+    uploadCoverImage: async (payload) => {
+        if (payload instanceof FormData) {
+            const response = await api.post('/api/user/upload-cover-image', payload);
+            return response.data;
+        }
+
+        if (payload?.file) {
+            const formData = new FormData();
+            formData.append('coverImage', payload.file);
+            const response = await api.post('/api/user/upload-cover-image', formData);
+            return response.data;
+        }
+
+        const response = await api.post('/api/user/upload-cover-image', payload);
+        return response.data;
+    },
     updatePreferences: async (payload) => {
         const response = await api.post('/api/user/preferences', payload);
         return response.data;
     },
+    followUser: async (userId) => {
+        const response = await api.post(`/api/user/follow/${userId}`);
+        return response.data;
+    },
+    unfollowUser: async (userId) => {
+        const response = await api.post(`/api/user/unfollow/${userId}`);
+        return response.data;
+    },
+    savePost: async (postId) => {
+        const response = await api.post(`/api/user/saved/${postId}`);
+        return response.data;
+    },
+    unsavePost: async (postId) => {
+        const response = await api.delete(`/api/user/saved/${postId}`);
+        return response.data;
+    },
     sendPasswordResetEmail: async () => {
         const response = await api.post('/api/user/reset-password');
+        return response.data;
+    },
+};
+
+export const settingsService = {
+    getSettings: async () => {
+        const response = await api.get('/api/user/settings');
+        return response.data;
+    },
+    updateSettings: async (payload) => {
+        const response = await api.patch('/api/user/settings', payload);
+        return response.data;
+    },
+    updatePrivacy: async (payload) => {
+        const response = await api.patch('/api/user/settings/privacy', payload);
+        return response.data;
+    },
+    updateNotifications: async (payload) => {
+        const response = await api.patch('/api/user/settings/notifications', payload);
+        return response.data;
+    },
+    updateAppearance: async (payload) => {
+        const response = await api.patch('/api/user/settings/appearance', payload);
+        return response.data;
+    },
+    logoutOtherSessions: async (payload) => {
+        const response = await api.post('/api/user/settings/logout-others', payload);
+        return response.data;
+    },
+    blockUser: async (payload) => {
+        const response = await api.post('/api/user/settings/block', payload);
+        return response.data;
+    },
+    unblockUser: async (payload) => {
+        const response = await api.post('/api/user/settings/unblock', payload);
+        return response.data;
+    },
+    muteUser: async (payload) => {
+        const response = await api.post('/api/user/settings/mute', payload);
+        return response.data;
+    },
+    unmuteUser: async (payload) => {
+        const response = await api.post('/api/user/settings/unmute', payload);
         return response.data;
     },
 };
