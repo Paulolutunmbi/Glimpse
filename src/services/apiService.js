@@ -35,12 +35,49 @@ export const postService = {
         const response = await api.get('/api/posts');
         return response.data;
     },
-    createPost: async (payload) => {
+    getFeed: async ({ type = 'latest', cursor, limit = 10 } = {}) => {
+        const response = await api.get('/api/posts/feed', {
+            params: { type, cursor, limit },
+        });
+        return response.data;
+    },
+    createPost: async (payload, options = {}) => {
+        if (payload instanceof FormData) {
+            const response = await api.post('/api/posts', payload, {
+                onUploadProgress: options.onProgress,
+            });
+            return response.data;
+        }
+
+        if (payload?.files || payload?.media) {
+            const formData = new FormData();
+            const files = payload.files || payload.media || [];
+            files.forEach((file) => formData.append('media', file));
+            if (payload.caption) formData.append('caption', payload.caption);
+            if (payload.title) formData.append('title', payload.title);
+            if (payload.visibility) formData.append('visibility', payload.visibility);
+            if (payload.tags) formData.append('tags', JSON.stringify(payload.tags));
+            if (payload.hashtags) formData.append('hashtags', JSON.stringify(payload.hashtags));
+            if (payload.mentions) formData.append('mentions', JSON.stringify(payload.mentions));
+            const response = await api.post('/api/posts', formData, {
+                onUploadProgress: options.onProgress,
+            });
+            return response.data;
+        }
+
         const response = await api.post('/api/posts', payload);
         return response.data;
     },
     toggleLike: async (postId) => {
         const response = await api.put(`/api/posts/${postId}/like`);
+        return response.data;
+    },
+    trackView: async (postId) => {
+        const response = await api.post(`/api/posts/${postId}/view`);
+        return response.data;
+    },
+    sharePost: async (postId) => {
+        const response = await api.post(`/api/posts/${postId}/share`);
         return response.data;
     },
     deletePost: async (postId) => {
@@ -79,6 +116,12 @@ export const userService = {
     },
     getProfileStats: async (userId) => {
         const response = await api.get(`/api/user/profile/${userId}/stats`);
+        return response.data;
+    },
+    getSavedMoments: async ({ cursor, limit = 10 } = {}) => {
+        const response = await api.get('/api/user/saved', {
+            params: { cursor, limit },
+        });
         return response.data;
     },
     updateProfile: async (payload) => {
@@ -137,6 +180,11 @@ export const userService = {
         const response = await api.delete(`/api/user/saved/${postId}`);
         return response.data;
     },
+    toggleFollow: async (userId, isFollowing) => {
+        const endpoint = isFollowing ? 'unfollow' : 'follow';
+        const response = await api.post(`/api/user/${endpoint}/${userId}`);
+        return response.data;
+    },
     sendPasswordResetEmail: async () => {
         const response = await api.post('/api/user/reset-password');
         return response.data;
@@ -182,6 +230,13 @@ export const settingsService = {
     },
     unmuteUser: async (payload) => {
         const response = await api.post('/api/user/settings/unmute', payload);
+        return response.data;
+    },
+};
+
+export const discoveryService = {
+    getDiscovery: async () => {
+        const response = await api.get('/api/discovery');
         return response.data;
     },
 };
