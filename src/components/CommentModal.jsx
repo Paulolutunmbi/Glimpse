@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { commentService } from "../services/apiService";
 import { socket } from "../socket";
+import Avatar from "./Avatar";
 
 const CommentModal = ({
   post,
@@ -22,7 +23,6 @@ const CommentModal = ({
 
   const postId = useMemo(() => post?._id || post?.id, [post]);
   const imageSrc = post?.imageUrl || post?.image;
-  const defaultAvatar = '/images/glimpse-icon.png';
   const imageSources = useMemo(() => {
     if (Array.isArray(post?.images)) {
       return post.images.filter(Boolean);
@@ -355,16 +355,19 @@ const CommentModal = ({
             const commentKey = getCommentKey(c);
             return (
               <div key={commentKey} className="flex gap-3">
-                <img
+                <Avatar
                   alt={c.username || "Comment author"}
-                  className="w-8 h-8 rounded-full object-cover shrink-0"
+                  className="shrink-0"
+                  name={c.username || currentUser?.username || 'User'}
+                  sizeClassName="h-8 w-8"
                   src={
                     c.avatar ||
                     currentUser?.profilePicture ||
                     currentUser?.avatar ||
                     post?.user?.avatar ||
-                    defaultAvatar
+                    ''
                   }
+                  textClassName="text-[10px]"
                 />
                 <div className="flex-1 flex items-start gap-2">
                   <div className="flex-1 bg-surface-variant rounded-xl p-3 rounded-tl-none">

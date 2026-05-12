@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import { searchService, userService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
+import Avatar from '../components/Avatar';
 
 export default function Search() {
   const { user, relations, savedPosts, refreshCounts } = useUser();
@@ -109,13 +110,16 @@ export default function Search() {
                 return (
                   <div
                     key={item._id || item.id}
-                    className="flex items-center justify-between rounded-xl border border-outline-variant/30 bg-white px-4 py-3"
+                    className="group flex items-center justify-between rounded-xl border border-outline-variant/30 bg-white px-4 py-3 transition-all hover:border-primary-container/40 hover:bg-surface-container-lowest active:scale-[0.99] focus-within:border-primary-container/60"
+                    tabIndex={0}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={item.profile?.avatar || item.profilePicture || item.avatar || '/images/glimpse-icon.png'}
+                      <Avatar
                         alt={item.username || 'User'}
-                        className="h-10 w-10 rounded-full object-cover"
+                        name={item.username || item.fullName || item.name}
+                        sizeClassName="h-10 w-10"
+                        src={item.profile?.avatar || item.profilePicture || item.avatar || ''}
+                        textClassName="text-[12px]"
                       />
                       <div>
                         <p className="text-sm font-semibold text-on-surface">{item.username || item.name}</p>
@@ -123,7 +127,7 @@ export default function Search() {
                       </div>
                     </div>
                     <button
-                      className="rounded-full border border-outline-variant px-3 py-1 text-xs"
+                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container/50 hover:text-primary-container active:scale-95"
                       type="button"
                       onClick={() => handleToggleFollow(item._id || item.id, isFollowing)}
                     >

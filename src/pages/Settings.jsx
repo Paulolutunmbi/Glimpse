@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { settingsService, userService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { getApiErrorMessage } from '../utils/errors';
+import Avatar from '../components/Avatar';
 
 const preferenceOptions = [
   'Photography',
@@ -214,7 +215,7 @@ const Settings = () => {
             <img
               src="/images/glimpse-logo-light-dark.png"
               alt="Glimpse"
-              className="h-8 w-auto object-contain"
+              className="h-[clamp(48px,6vw,96px)] w-auto object-contain"
             />
           </div>
           <nav className="hidden items-center gap-4 md:flex">
@@ -259,13 +260,12 @@ const Settings = () => {
                   type="button"
                   onClick={handleFilePick}
                 >
-                  <img
+                  <Avatar
                     alt="Profile picture preview"
-                    className="h-full w-full object-cover"
-                    src={
-                      avatarPreview ||
-                      '/images/glimpse-icon.png'
-                    }
+                    name={username || user?.username || user?.name}
+                    sizeClassName="h-full w-full"
+                    src={avatarPreview}
+                    textClassName="text-[14px]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                     <span className="material-symbols-outlined text-white">photo_camera</span>

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import API, { onAuthLogout } from '../api/axios';
 import { messageService, notificationService } from '../services/apiService';
-import { socket } from '../socket';
+import { socket, updateSocketAuth } from '../socket';
 
 const UserContext = createContext(null);
 
@@ -125,6 +125,7 @@ export const UserProvider = ({ children }) => {
   const setAuthToken = useCallback((token) => {
     if (!token) {
       localStorage.removeItem('token');
+      updateSocketAuth(null);
       setUser(null);
       setProfile(null);
       setStats(null);
@@ -135,6 +136,7 @@ export const UserProvider = ({ children }) => {
     }
 
     localStorage.setItem('token', token);
+    updateSocketAuth(token);
   }, []);
 
   const updateUser = useCallback((nextUser) => {
@@ -153,6 +155,7 @@ export const UserProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    updateSocketAuth(null);
     setUser(null);
     setProfile(null);
     setStats(null);

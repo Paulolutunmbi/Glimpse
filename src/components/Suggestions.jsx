@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { userService } from '../services/apiService';
-
-const fallbackAvatar = '/images/glimpse-icon.png';
+import Avatar from './Avatar';
 
 export default function Suggestions({ currentUser, suggestions, discovery, onFollowChange }) {
   const [followingIds, setFollowingIds] = useState(new Set());
@@ -28,31 +27,34 @@ export default function Suggestions({ currentUser, suggestions, discovery, onFol
       <div className="ambient-card sticky top-24 rounded-[16px] bg-surface-container-lowest p-6">
         <h2 className="mb-6 font-h3 text-on-surface">Suggested Creators</h2>
         <div className="flex flex-col gap-5">
-          {suggestions.map((creator, index) => {
+          {suggestions.map((creator) => {
             const isFollowing = followingIds.has(creator.id) || creator.isFollowing;
+            const detail =
+              creator.specialty ||
+              creator.bio ||
+              creator.extraInfo ||
+              (typeof creator.followersCount === 'number'
+                ? `${creator.followersCount.toLocaleString()} followers`
+                : '');
             return (
               <div key={creator.id || creator.username} className="group flex cursor-pointer items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  {creator.avatar ? (
-                    <img
-                      alt={creator.name || creator.username}
-                      className="h-10 w-10 rounded-full object-cover"
-                      src={creator.avatar}
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-white">
-                      <span className="font-label-md">
-                        {(creator.name || creator.username || 'G')[0]}
-                      </span>
-                    </div>
-                  )}
+                  <Avatar
+                    alt={creator.name || creator.username}
+                    name={creator.name || creator.username}
+                    sizeClassName="h-10 w-10"
+                    src={creator.avatar}
+                    textClassName="text-[12px]"
+                  />
                   <div className="min-w-0">
                     <div className="truncate font-label-md text-on-surface transition-colors group-hover:text-primary-container">
                       {creator.name || creator.username}
                     </div>
-                    <div className="truncate text-[12px] text-secondary font-body-sm">
-                      {creator.specialty || (index === 0 ? 'Photography' : 'Creator')}
-                    </div>
+                    {detail ? (
+                      <div className="truncate text-[12px] text-secondary font-body-sm">
+                        {detail}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <button
@@ -67,7 +69,7 @@ export default function Suggestions({ currentUser, suggestions, discovery, onFol
 
           {suggestions.length === 0 && (
             <div className="flex items-center gap-3 text-secondary">
-              <img alt="" className="h-10 w-10 rounded-full" src={fallbackAvatar} />
+              <Avatar alt="" name="Glimpse" sizeClassName="h-10 w-10" textClassName="text-[12px]" />
               <span className="text-body-sm">No creators yet</span>
             </div>
           )}

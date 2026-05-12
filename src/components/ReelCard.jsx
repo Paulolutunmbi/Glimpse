@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { postService, userService } from '../services/apiService';
 import { socket } from '../socket';
 import CommentModal from './CommentModal';
+import Avatar from './Avatar';
 
 const formatCount = (value) => {
   const numeric = Number(value);
@@ -37,7 +38,8 @@ export default function ReelCard({ reel, currentUser }) {
       setIsFollowing(followIds.has(String(reel.author)));
     }, [followIds, reel]);
   const videoSrc = videoItem?.url || reel?.video || reel?.image || '';
-  const avatarSrc = reel?.user?.avatar || reel?.user?.profilePicture || '/images/glimpse-icon.png';
+  const avatarSrc = reel?.user?.avatar || reel?.user?.profilePicture || '';
+  const avatarName = reel?.user?.username || reel?.user?.name || 'Creator';
 
   useEffect(() => {
     if (!postId) return;
@@ -221,10 +223,13 @@ export default function ReelCard({ reel, currentUser }) {
       <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-6 pb-12">
         <div className="flex max-w-[70%] flex-col gap-3">
           <div className="flex items-center gap-3">
-            <img
-              className="h-10 w-10 rounded-full border border-white/20 object-cover"
-              src={avatarSrc}
+            <Avatar
               alt={reel?.user?.username || 'Creator'}
+              className="border border-white/20"
+              name={avatarName}
+              sizeClassName="h-10 w-10"
+              src={avatarSrc}
+              textClassName="text-[12px]"
             />
             <div>
               <p className="text-sm font-semibold">{reel?.user?.username || 'Creator'}</p>

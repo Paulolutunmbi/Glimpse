@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
+import Avatar from '../components/Avatar';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -13,10 +14,10 @@ const Profile = () => {
     savedPosts,
   ]);
 
-  const avatar = profile?.avatar || user?.profilePicture || user?.avatar || '/images/glimpse-icon.png';
-  const bio = profile?.bio || user?.bio || 'Tell the world what inspires you.';
-  const displayName = user?.fullName || user?.name || user?.username || 'Glimpse Creator';
-  const handle = user?.username || user?.name || 'glimpse';
+  const avatar = profile?.avatar || user?.profilePicture || user?.avatar || '';
+  const displayName = user?.fullName || user?.name || user?.username || '';
+  const handle = user?.username || user?.name || '';
+  const bio = profile?.bio || user?.bio || '';
   const postsCount = stats?.postsCount ?? posts.length;
   const followersCount = stats?.followersCount ?? relations?.followers?.length ?? 0;
   const followingCount = stats?.followingCount ?? relations?.following?.length ?? 0;
@@ -44,19 +45,32 @@ const Profile = () => {
       <main className="mx-auto mt-xl max-w-[1200px] px-margin_mobile md:px-margin_desktop">
         <section className="mb-xxl flex w-full flex-col items-center text-center">
           <div className="mb-md">
-            <img
+            <Avatar
               alt="Profile portrait"
-              className="h-32 w-32 rounded-full border-4 border-surface-container-lowest object-cover shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]"
+              className="border-4 border-surface-container-lowest shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]"
+              name={displayName || handle || 'Glimpse'}
+              sizeClassName="h-32 w-32"
               src={avatar}
+              textClassName="text-[20px]"
             />
           </div>
-          <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
-          <p className="mb-md font-body-md text-body-md text-on-surface-variant">
-            @{handle}
-          </p>
-          <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
-            {bio}
-          </p>
+          {displayName ? (
+            <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
+          ) : null}
+          {handle ? (
+            <p className="mb-md font-body-md text-body-md text-on-surface-variant">
+              @{handle}
+            </p>
+          ) : null}
+          {bio ? (
+            <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
+              {bio}
+            </p>
+          ) : (
+            <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface-variant md:max-w-md">
+              No bio yet.
+            </p>
+          )}
           <div className="mb-xl flex flex-wrap justify-center gap-md">
             <button
               className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95"

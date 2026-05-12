@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import { notificationService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { socket } from '../socket';
+import Avatar from '../components/Avatar';
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -128,10 +129,12 @@ export default function Notifications() {
                     : 'border-primary-container/40 bg-white shadow-sm'
                 }`}
               >
-                <img
-                  src={actor.avatar || '/images/glimpse-icon.png'}
+                <Avatar
                   alt={actor.username || 'User'}
-                  className="h-10 w-10 rounded-full object-cover"
+                  name={actor.username || actor.name}
+                  sizeClassName="h-10 w-10"
+                  src={actor.avatar || ''}
+                  textClassName="text-[12px]"
                 />
                 <div className="flex-1">
                   <p className="text-sm text-on-surface">

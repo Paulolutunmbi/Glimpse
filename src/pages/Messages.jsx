@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import { messageService, searchService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { socket } from '../socket';
+import Avatar from '../components/Avatar';
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -175,10 +176,12 @@ export default function Messages() {
                     type="button"
                     onClick={() => handleStartConversation(result._id || result.id)}
                   >
-                    <img
-                      src={result.profile?.avatar || result.profilePicture || result.avatar || '/images/glimpse-icon.png'}
+                    <Avatar
                       alt={result.username}
-                      className="h-8 w-8 rounded-full object-cover"
+                      name={result.username || result.fullName || result.name}
+                      sizeClassName="h-8 w-8"
+                      src={result.profile?.avatar || result.profilePicture || result.avatar || ''}
+                      textClassName="text-[11px]"
                     />
                     <div>
                       <p className="font-semibold text-on-surface">{result.username || result.name}</p>
@@ -210,10 +213,12 @@ export default function Messages() {
                   type="button"
                   onClick={() => setActiveConversation(conversation)}
                 >
-                  <img
-                    src={partner?.profile?.avatar || partner?.profilePicture || partner?.avatar || '/images/glimpse-icon.png'}
+                  <Avatar
                     alt={partner?.username || 'User'}
-                    className="h-10 w-10 rounded-full object-cover"
+                    name={partner?.username || partner?.fullName || partner?.name}
+                    sizeClassName="h-10 w-10"
+                    src={partner?.profile?.avatar || partner?.profilePicture || partner?.avatar || ''}
+                    textClassName="text-[12px]"
                   />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-on-surface">{partner?.username || 'User'}</p>
@@ -232,10 +237,12 @@ export default function Messages() {
 
         <section className="flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4">
           <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-3">
-            <img
-              src={activePartner?.profile?.avatar || activePartner?.profilePicture || activePartner?.avatar || '/images/glimpse-icon.png'}
+            <Avatar
               alt={activePartner?.username || 'User'}
-              className="h-10 w-10 rounded-full object-cover"
+              name={activePartner?.username || activePartner?.fullName || activePartner?.name}
+              sizeClassName="h-10 w-10"
+              src={activePartner?.profile?.avatar || activePartner?.profilePicture || activePartner?.avatar || ''}
+              textClassName="text-[12px]"
             />
             <div>
               <p className="text-sm font-semibold text-on-surface">{activePartner?.username || 'Select a chat'}</p>

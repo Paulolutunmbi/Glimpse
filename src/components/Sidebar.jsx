@@ -20,7 +20,7 @@ export default function Sidebar() {
         <img
           src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="h-8 w-auto object-contain"
+          className="h-[clamp(52px,7vw,110px)] w-auto object-contain"
         />
         <span className="text-lg font-semibold tracking-wide text-on-surface">Glimpse</span>
       </div>
@@ -80,15 +80,6 @@ export default function Sidebar() {
         More
       </button>
 
-      <a
-        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-gray-500 transition-all hover:bg-gray-50 dark:text-gray-500 dark:hover:bg-gray-800/50"
-        href="https://about.meta.com"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <span className="material-symbols-outlined">grid_view</span>
-        Also from Meta
-      </a>
     </nav>
   );
 }

@@ -103,9 +103,11 @@ export default function Reels() {
     const handlePostCreated = (payload) => {
       const newPost = payload?.post || payload;
       if (!newPost || newPost.type !== 'video') return;
+      const newPostId = newPost._id || newPost.id;
+      if (!newPostId) return;
       if (!canViewPost({ post: newPost, viewerId: currentUserId, relations })) return;
       setReels((prev) => {
-        const exists = prev.some((item) => item._id === newPost._id || item.id === newPost._id);
+        const exists = prev.some((item) => String(item._id || item.id) === String(newPostId));
         if (exists) return prev;
         return [normalizeReel(newPost), ...prev];
       });
@@ -116,7 +118,7 @@ export default function Reels() {
       if (!postId) return;
       setReels((prev) =>
         prev.map((item) => {
-          if (item._id !== postId && item.id !== postId) return item;
+          if (String(item._id || item.id) !== String(postId)) return item;
           const likes = Array.isArray(payload?.likes) ? payload.likes : item.likes || [];
           return {
             ...item,
@@ -134,7 +136,7 @@ export default function Reels() {
     const handlePostDeleted = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
-      setReels((prev) => prev.filter((item) => item._id !== postId && item.id !== postId));
+      setReels((prev) => prev.filter((item) => String(item._id || item.id) !== String(postId)));
     };
 
     const handlePostSaved = (payload) => {
@@ -142,7 +144,7 @@ export default function Reels() {
       if (!postId) return;
       setReels((prev) =>
         prev.map((item) =>
-          item._id === postId || item.id === postId
+          String(item._id || item.id) === String(postId)
             ? { ...item, saveCount: payload?.saveCount ?? item.saveCount }
             : item
         )
@@ -154,7 +156,7 @@ export default function Reels() {
       if (!postId) return;
       setReels((prev) =>
         prev.filter((item) => {
-          if (item._id !== postId && item.id !== postId) return true;
+          if (String(item._id || item.id) !== String(postId)) return true;
           const next = { ...item, visibility: payload?.visibility || item.visibility };
           return canViewPost({ post: next, viewerId: currentUserId, relations });
         })

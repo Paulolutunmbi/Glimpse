@@ -3,11 +3,13 @@ import { postService, userService } from '../services/apiService';
 import { socket } from '../socket';
 import CommentModal from './CommentModal';
 import MediaCarousel from './MediaCarousel';
+import Avatar from './Avatar';
 
 export default function PostCard({ post, currentUser }) {
   const postId = useMemo(() => post?._id || post?.id, [post]);
   const { user, timestamp, caption } = post;
-  const avatarSrc = user?.avatar || user?.profilePicture || '/images/glimpse-icon.png';
+  const avatarSrc = user?.avatar || user?.profilePicture || '';
+  const avatarName = user?.username || user?.name || 'Glimpse';
   const mediaItems = Array.isArray(post?.media) ? post.media : post?.image ? [{ url: post.image }] : [];
   const [liked, setLiked] = useState(Boolean(post?.isLiked));
   const [likes, setLikes] = useState(
@@ -146,10 +148,13 @@ export default function PostCard({ post, currentUser }) {
       {/* Card Header */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <img
-            className="w-10 h-10 rounded-full object-cover border border-surface-variant cursor-pointer"
-            alt={`close up profile photo of ${user?.username}`}
+          <Avatar
+            alt={`close up profile photo of ${user?.username || 'user'}`}
+            className="border border-surface-variant cursor-pointer"
+            name={avatarName}
+            sizeClassName="h-10 w-10"
             src={avatarSrc}
+            textClassName="text-[12px]"
           />
           <div>
             <h3 className="font-label-md text-on-surface leading-tight cursor-pointer hover:underline">

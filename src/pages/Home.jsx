@@ -1,14 +1,16 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import Suggestions from '../components/Suggestions';
 import StoryRow from '../components/StoryRow';
 import { useUser } from '../context/UserContext.jsx';
-import { discoveryService, postService } from '../services/apiService';
+import { discoveryService, postService, searchService, userService } from '../services/apiService';
 import { socket } from '../socket';
-import { mockStories, mockSuggestions } from '../data/posts';
+import Avatar from '../components/Avatar';
 
 export default function Home() {
+  const navigate = useNavigate();
   const { user, savedPosts, relations } = useUser();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,12 @@ export default function Home() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [feedType, setFeedType] = useState('latest');
   const [discovery, setDiscovery] = useState(null);
+  const [fabOpen, setFabOpen] = useState(false);
+  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [discoverQuery, setDiscoverQuery] = useState('');
+  const [discoverResults, setDiscoverResults] = useState([]);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverFollowIds, setDiscoverFollowIds] = useState(() => new Set());
   const currentUserId = user?.id || user?._id || null;
 
   const canViewPost = useCallback(
@@ -58,7 +66,7 @@ export default function Home() {
   };
 
   const stories = useMemo(() => {
-    const avatarSrc = user?.profilePicture || user?.avatar || '/images/glimpse-icon.png';
+    const avatarSrc = user?.profilePicture || user?.avatar || user?.profile?.avatar || '';
     const youStory = {
       id: 'you',
       username: 'You',
@@ -66,9 +74,42 @@ export default function Home() {
       isYou: true,
       hasStory: false,
     };
+    const suggestedStories = (discovery?.suggestedCreators || []).map((creator) => ({
+      id: creator.id || creator._id || creator.username,
+      username: creator.username || creator.name || 'Creator',
+      avatar: creator.avatar || '',
+      isYou: false,
+      hasStory: false,
+    }));
 
-    return [youStory, ...mockStories.filter((story) => story.id !== 'you')];
-  }, [user]);
+    return [youStory, ...suggestedStories];
+  }, [user, discovery]);
+
+  const relationFollowing = useMemo(
+    () => new Set((relations?.following || []).map(String)),
+    [relations]
+  );
+
+  useEffect(() => {
+    if (!discoverOpen || !discoverQuery.trim()) {
+      setDiscoverResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setDiscoverLoading(true);
+      try {
+        const response = await searchService.search({ query: discoverQuery, limit: 8 });
+        setDiscoverResults(Array.isArray(response?.users) ? response.users : []);
+      } catch {
+        setDiscoverResults([]);
+      } finally {
+        setDiscoverLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [discoverOpen, discoverQuery]);
 
   const loadFeed = useCallback(
     async ({ nextCursor = null, replace = false } = {}) => {
@@ -138,9 +179,14 @@ export default function Home() {
     const handlePostCreated = (payload) => {
       const newPost = payload?.post || payload;
       if (!newPost) return;
+      const newPostId = newPost._id || newPost.id;
+      if (!newPostId) return;
       if (!canViewPost(newPost)) return;
       setPosts((prev) => {
-        const exists = prev.some((item) => item._id === newPost._id || item.id === newPost._id);
+        const exists = prev.some((item) => {
+          const itemId = item._id || item.id;
+          return String(itemId) === String(newPostId);
+        });
         if (exists) return prev;
         return [normalizePost(newPost, currentUserId), ...prev];
       });
@@ -151,7 +197,8 @@ export default function Home() {
       if (!postId) return;
       setPosts((prev) =>
         prev.map((item) => {
-          if (item._id !== postId && item.id !== postId) return item;
+          const itemId = item._id || item.id;
+          if (String(itemId) !== String(postId)) return item;
           const likes = Array.isArray(payload?.likes) ? payload.likes : item.likes || [];
           return {
             ...item,
@@ -169,7 +216,7 @@ export default function Home() {
     const handlePostDeleted = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
-      setPosts((prev) => prev.filter((item) => item._id !== postId && item.id !== postId));
+      setPosts((prev) => prev.filter((item) => String(item._id || item.id) !== String(postId)));
     };
 
     socket.on('post:created', handlePostCreated);
@@ -182,7 +229,7 @@ export default function Home() {
       if (!postId) return;
       setPosts((prev) =>
         prev.map((item) =>
-          item._id === postId || item.id === postId
+          String(item._id || item.id) === String(postId)
             ? { ...item, saveCount: payload?.saveCount ?? item.saveCount }
             : item
         )
@@ -196,7 +243,7 @@ export default function Home() {
       if (!postId) return;
       setPosts((prev) =>
         prev.filter((item) => {
-          if (item._id !== postId && item.id !== postId) return true;
+          if (String(item._id || item.id) !== String(postId)) return true;
           const next = { ...item, visibility: payload?.visibility || item.visibility };
           return canViewPost(next);
         })
@@ -312,12 +359,167 @@ export default function Home() {
           </div>
 
           {/* Right Panel (Suggestions) */}
-          <Suggestions
-            currentUser={user}
-            suggestions={discovery?.suggestedCreators || mockSuggestions}
-            discovery={discovery}
-            onFollowChange={() => loadFeed({ replace: true })}
-          />
+          <div className="hidden xl:block">
+            <Suggestions
+              currentUser={user}
+              suggestions={discovery?.suggestedCreators || []}
+              discovery={discovery}
+              onFollowChange={() => loadFeed({ replace: true })}
+            />
+          </div>
+      </div>
+
+      <div className="md:hidden">
+        <div className="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3">
+          {fabOpen ? (
+            <div className="flex flex-col items-end gap-2">
+              <button
+                type="button"
+                className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-on-surface shadow-lg transition hover:bg-surface-container-lowest"
+                onClick={() => {
+                  setDiscoverOpen(true);
+                  setFabOpen(false);
+                }}
+              >
+                Find New Friends
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-on-surface shadow-lg transition hover:bg-surface-container-lowest"
+                onClick={() => {
+                  navigate('/create');
+                  setFabOpen(false);
+                }}
+              >
+                Create Moment
+              </button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            aria-label="Quick actions"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-container text-white shadow-[0_16px_30px_-12px_rgba(255,90,95,0.65)] transition-transform active:scale-95"
+            onClick={() => setFabOpen((prev) => !prev)}
+          >
+            <span className="material-symbols-outlined text-[26px]">
+              {fabOpen ? 'close' : 'add'}
+            </span>
+          </button>
+        </div>
+
+        {discoverOpen ? (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-safe"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pb-6 pt-4 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-on-surface">Find New Friends</h2>
+                <button
+                  type="button"
+                  className="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-lowest"
+                  onClick={() => {
+                    setDiscoverOpen(false);
+                    setDiscoverQuery('');
+                    setDiscoverResults([]);
+                  }}
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3">
+                <label className="text-xs text-on-surface-variant">Search people</label>
+                <input
+                  className="mt-2 w-full bg-transparent text-base outline-none"
+                  placeholder="Search for people"
+                  value={discoverQuery}
+                  onChange={(event) => setDiscoverQuery(event.target.value)}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 overflow-y-auto max-h-[60vh]">
+                {discoverLoading ? (
+                  <p className="text-xs text-on-surface-variant">Searching...</p>
+                ) : null}
+
+                {(discoverQuery.trim() ? discoverResults : discovery?.suggestedCreators || []).map(
+                  (creator) => {
+                    const creatorId = creator?._id || creator?.id;
+                    if (!creatorId) return null;
+                    const isFollowing =
+                      discoverFollowIds.has(String(creatorId)) ||
+                      creator._isFollowing ||
+                      relationFollowing.has(String(creatorId));
+                    const detail =
+                      creator.bio ||
+                      creator.extraInfo ||
+                      (typeof creator.followersCount === 'number'
+                        ? `${creator.followersCount.toLocaleString()} followers`
+                        : '');
+                    return (
+                      <div
+                        key={creatorId}
+                        className="flex items-center justify-between rounded-2xl border border-outline-variant/30 bg-white px-4 py-3 transition-all hover:border-primary-container/40 hover:bg-surface-container-lowest active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            alt={creator.username || creator.name || 'User'}
+                            name={creator.username || creator.name}
+                            sizeClassName="h-10 w-10"
+                            src={creator.avatar || creator.profile?.avatar || creator.profilePicture || ''}
+                            textClassName="text-[12px]"
+                          />
+                          <div>
+                            <p className="text-sm font-semibold text-on-surface">
+                              {creator.username || creator.name}
+                            </p>
+                            {creator.mutualCount ? (
+                              <p className="text-xs text-on-surface-variant">
+                                {creator.mutualCount} mutual connections
+                              </p>
+                            ) : detail ? (
+                              <p className="text-xs text-on-surface-variant">{detail}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container/50 hover:text-primary-container active:scale-95"
+                          onClick={async () => {
+                            const next = new Set(discoverFollowIds);
+                            if (next.has(String(creatorId))) {
+                              next.delete(String(creatorId));
+                            } else {
+                              next.add(String(creatorId));
+                            }
+                            setDiscoverFollowIds(next);
+                            try {
+                              await userService.toggleFollow(creatorId, isFollowing);
+                            } catch {
+                              setDiscoverFollowIds((prev) => {
+                                const rollback = new Set(prev);
+                                if (rollback.has(String(creatorId))) {
+                                  rollback.delete(String(creatorId));
+                                } else {
+                                  rollback.add(String(creatorId));
+                                }
+                                return rollback;
+                              });
+                            }
+                          }}
+                        >
+                          {isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
