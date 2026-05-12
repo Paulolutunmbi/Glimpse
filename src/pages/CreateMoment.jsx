@@ -126,8 +126,8 @@ export default function CreateMoment() {
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased">
-      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <div>
             <h1 className="font-h3 text-on-surface">Create Moment</h1>
             <p className="text-body-sm text-on-surface-variant">Step {step} of 2</p>
@@ -142,9 +142,9 @@ export default function CreateMoment() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <form className="grid gap-8 lg:grid-cols-[2fr,1fr]" onSubmit={handleSubmit}>
-          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-sm">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 pb-safe">
+        <form className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" onSubmit={handleSubmit}>
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-4 shadow-sm sm:p-6">
             {step === 1 ? (
               <>
                 <h2 className="mb-4 font-h4 text-on-surface">Select media</h2>
@@ -152,19 +152,20 @@ export default function CreateMoment() {
                   type="file"
                   accept="image/*,video/*"
                   multiple
+                  className="mt-2 w-full rounded-xl border border-outline-variant bg-white px-3 py-2 text-sm"
                   onChange={handleFileChange}
                 />
 
                 {previews.length > 0 && (
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {previews.map((preview, index) => (
                       <div key={preview.url} className="relative overflow-hidden rounded-xl">
                         {preview.type === 'video' ? (
-                          <video className="h-48 w-full object-cover" src={preview.url} />
+                          <video className="h-48 w-full object-cover" src={preview.url} playsInline />
                         ) : (
-                          <img className="h-48 w-full object-cover" src={preview.url} alt="preview" />
+                          <img className="h-48 w-full object-cover" src={preview.url} alt={preview.alt} />
                         )}
-                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/50 px-3 py-2 text-xs text-white">
+                        <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-black/55 px-3 py-2 text-xs text-white">
                           <button type="button" onClick={() => handleReorder(index, -1)}>
                             Move up
                           </button>
@@ -188,7 +189,7 @@ export default function CreateMoment() {
             )}
           </section>
 
-          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-sm">
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-4 shadow-sm sm:p-6">
             {step === 1 ? (
               <>
                 <h2 className="mb-4 font-h4 text-on-surface">Before you continue</h2>
@@ -201,7 +202,7 @@ export default function CreateMoment() {
                   </div>
                 )}
                 <button
-                  className="mt-6 w-full rounded-lg bg-primary-container px-4 py-3 text-white"
+                  className="mt-6 w-full rounded-lg bg-primary-container px-4 py-3 text-white transition-transform active:scale-[0.99]"
                   type="button"
                   disabled={files.length === 0}
                   onClick={() => setStep(2)}

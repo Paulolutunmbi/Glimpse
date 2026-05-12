@@ -6,8 +6,8 @@ const AuthLayout = ({
   imageAlt = 'A diverse group of people gathered together and smiling in a warm candid photograph.',
   kicker = 'Reset your access. Keep capturing moments.',
   description = "Our community is built on the shared stories we tell through lenses. Let's get you back to the view.",
-  logoSizeClass = 'h-16',
-  sidebarLogoSizeClass = 'h-14',
+  logoSizeClass = 'glimpse-logo-compact',
+  sidebarLogoSizeClass = 'glimpse-logo',
 }) => {
 
   return (
@@ -27,7 +27,7 @@ const AuthLayout = ({
               <img
                 src="/images/glimpse-logo-light-dark.png"
                 alt="Glimpse"
-                className={`${sidebarLogoSizeClass} w-auto object-contain`}
+                className={`${sidebarLogoSizeClass} object-contain`}
               />
               <div className="mt-lg space-y-md">
                 <h1 className="max-w-[520px] font-display text-[28px] font-bold leading-tight text-white lg:text-[32px]">
@@ -48,7 +48,7 @@ const AuthLayout = ({
             <img
               src="/images/glimpse-logo-light-dark.png"
               alt="Glimpse"
-              className={`${logoSizeClass} w-auto object-contain`}
+              className={`${logoSizeClass} object-contain`}
             />
           </header>
 

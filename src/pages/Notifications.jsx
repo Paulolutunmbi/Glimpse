@@ -90,7 +90,7 @@ export default function Notifications() {
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} />
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 md:px-8">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6 pb-safe md:px-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-on-surface">Notifications</h1>
@@ -130,11 +130,10 @@ export default function Notifications() {
                 }`}
               >
                 <Avatar
+                  src={actor.avatar}
+                  name={actor.username}
                   alt={actor.username || 'User'}
-                  name={actor.username || actor.name}
-                  sizeClassName="h-10 w-10"
-                  src={actor.avatar || ''}
-                  textClassName="text-[12px]"
+                  className="h-10 w-10"
                 />
                 <div className="flex-1">
                   <p className="text-sm text-on-surface">

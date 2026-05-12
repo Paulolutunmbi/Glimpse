@@ -157,7 +157,7 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} />
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:flex-row md:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 pb-safe md:flex-row md:px-8">
         <section className="w-full md:w-72">
           <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4">
             <h2 className="mb-3 text-sm font-semibold text-on-surface">Messages</h2>
@@ -172,16 +172,15 @@ export default function Messages() {
                 {searchResults.map((result) => (
                   <button
                     key={result._id || result.id}
-                    className="flex w-full items-center gap-3 rounded-xl border border-outline-variant/30 bg-white px-3 py-2 text-left text-xs"
+                    className="flex w-full items-center gap-3 rounded-xl border border-outline-variant/30 bg-white px-3 py-2 text-left text-xs transition-colors hover:bg-surface-container-lowest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/30 active:scale-[0.99]"
                     type="button"
                     onClick={() => handleStartConversation(result._id || result.id)}
                   >
                     <Avatar
-                      alt={result.username}
-                      name={result.username || result.fullName || result.name}
-                      sizeClassName="h-8 w-8"
-                      src={result.profile?.avatar || result.profilePicture || result.avatar || ''}
-                      textClassName="text-[11px]"
+                      src={result.profile?.avatar || result.profilePicture || result.avatar}
+                      name={result.username || result.name}
+                      alt={result.username || 'User'}
+                      className="h-8 w-8"
                     />
                     <div>
                       <p className="font-semibold text-on-surface">{result.username || result.name}</p>
@@ -214,11 +213,10 @@ export default function Messages() {
                   onClick={() => setActiveConversation(conversation)}
                 >
                   <Avatar
+                    src={partner?.profile?.avatar || partner?.profilePicture || partner?.avatar}
+                    name={partner?.username || partner?.name}
                     alt={partner?.username || 'User'}
-                    name={partner?.username || partner?.fullName || partner?.name}
-                    sizeClassName="h-10 w-10"
-                    src={partner?.profile?.avatar || partner?.profilePicture || partner?.avatar || ''}
-                    textClassName="text-[12px]"
+                    className="h-10 w-10"
                   />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-on-surface">{partner?.username || 'User'}</p>
@@ -238,11 +236,10 @@ export default function Messages() {
         <section className="flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4">
           <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-3">
             <Avatar
+              src={activePartner?.profile?.avatar || activePartner?.profilePicture || activePartner?.avatar}
+              name={activePartner?.username || activePartner?.name}
               alt={activePartner?.username || 'User'}
-              name={activePartner?.username || activePartner?.fullName || activePartner?.name}
-              sizeClassName="h-10 w-10"
-              src={activePartner?.profile?.avatar || activePartner?.profilePicture || activePartner?.avatar || ''}
-              textClassName="text-[12px]"
+              className="h-10 w-10"
             />
             <div>
               <p className="text-sm font-semibold text-on-surface">{activePartner?.username || 'Select a chat'}</p>

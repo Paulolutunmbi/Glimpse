@@ -45,13 +45,13 @@ const ForgotPassword = () => {
   };
 
   return (
-    <AuthLayout logoSizeClass="h-[192px]" sidebarLogoSizeClass="h-[168px]">
+    <AuthLayout logoSizeClass="glimpse-logo-compact" sidebarLogoSizeClass="glimpse-logo">
       <section className="relative z-10 w-full max-w-[520px] rounded-2xl bg-surface-container-lowest p-lg shadow-[0_22px_45px_-30px_rgba(61,44,44,0.65)] sm:p-xl lg:p-xxl dark:bg-[#261817] dark:shadow-[0_22px_45px_-30px_rgba(0,0,0,0.9)]">
         <div className="mb-lg flex justify-center sm:justify-start lg:hidden">
           <img
             src="/images/glimpse-logo-light-dark.png"
             alt="Glimpse"
-            className="h-[192px] w-auto object-contain"
+            className="glimpse-logo object-contain"
           />
         </div>
         <div className="mb-xl">

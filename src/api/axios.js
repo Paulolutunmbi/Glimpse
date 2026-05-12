@@ -26,7 +26,9 @@ API.interceptors.request.use((req) => {
 API.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error?.response?.status === 401) {
+        const status = error?.response?.status;
+        const code = error?.response?.data?.code;
+        if (status === 401 || (status === 403 && code === 'BANNED')) {
             localStorage.removeItem("token");
             authEvents.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
         }

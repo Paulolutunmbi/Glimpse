@@ -10,8 +10,6 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
     currentUser?.profilePicture ||
     currentUser?.avatar ||
     '';
-  const avatarName =
-    currentUser?.username || currentUser?.name || currentUser?.fullName || 'Glimpse';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
@@ -21,7 +19,7 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
             <img
               src="/images/glimpse-logo-light-dark.png"
               alt="Glimpse"
-              className="h-[clamp(48px,6vw,96px)] w-auto object-contain"
+              className="glimpse-logo-compact object-contain"
             />
           </div>
           <button className="text-rose-500 md:hidden" aria-label="Search">
@@ -43,7 +41,7 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
           <img
             src="/images/glimpse-logo-light-dark.png"
             alt="Glimpse"
-            className="h-[clamp(40px,12vw,80px)] w-auto object-contain"
+            className="glimpse-logo-compact object-contain"
           />
         </div>
 
@@ -81,12 +79,10 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
             <span className="material-symbols-outlined">add_circle</span>
           </button>
           <Avatar
-            alt="User avatar"
-            className="border border-surface-container"
-            name={avatarName}
-            sizeClassName="h-9 w-9"
             src={avatarSrc}
-            textClassName="text-[12px]"
+            name={currentUser?.username || currentUser?.name}
+            alt="User avatar"
+            className="h-8 w-8 border border-surface-container"
           />
         </div>
       </div>

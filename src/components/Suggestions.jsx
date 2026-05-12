@@ -27,34 +27,24 @@ export default function Suggestions({ currentUser, suggestions, discovery, onFol
       <div className="ambient-card sticky top-24 rounded-[16px] bg-surface-container-lowest p-6">
         <h2 className="mb-6 font-h3 text-on-surface">Suggested Creators</h2>
         <div className="flex flex-col gap-5">
-          {suggestions.map((creator) => {
+          {suggestions.map((creator, index) => {
             const isFollowing = followingIds.has(creator.id) || creator.isFollowing;
-            const detail =
-              creator.specialty ||
-              creator.bio ||
-              creator.extraInfo ||
-              (typeof creator.followersCount === 'number'
-                ? `${creator.followersCount.toLocaleString()} followers`
-                : '');
             return (
               <div key={creator.id || creator.username} className="group flex cursor-pointer items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar
                     alt={creator.name || creator.username}
-                    name={creator.name || creator.username}
-                    sizeClassName="h-10 w-10"
+                    className="h-10 w-10"
                     src={creator.avatar}
-                    textClassName="text-[12px]"
+                    name={creator.name || creator.username}
                   />
                   <div className="min-w-0">
                     <div className="truncate font-label-md text-on-surface transition-colors group-hover:text-primary-container">
                       {creator.name || creator.username}
                     </div>
-                    {detail ? (
-                      <div className="truncate text-[12px] text-secondary font-body-sm">
-                        {detail}
-                      </div>
-                    ) : null}
+                    <div className="truncate text-[12px] text-secondary font-body-sm">
+                      {creator.specialty || (index === 0 ? 'Photography' : 'Creator')}
+                    </div>
                   </div>
                 </div>
                 <button
@@ -69,7 +59,7 @@ export default function Suggestions({ currentUser, suggestions, discovery, onFol
 
           {suggestions.length === 0 && (
             <div className="flex items-center gap-3 text-secondary">
-              <Avatar alt="" name="Glimpse" sizeClassName="h-10 w-10" textClassName="text-[12px]" />
+              <Avatar alt="" className="h-10 w-10" name="G" />
               <span className="text-body-sm">No creators yet</span>
             </div>
           )}

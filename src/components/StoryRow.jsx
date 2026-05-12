@@ -7,12 +7,10 @@ export default function StoryRow({ stories }) {
         <div key={story.id} className={`flex flex-col items-center gap-1 min-w-[72px] ${!story.isYou ? 'cursor-pointer opacity-80 hover:opacity-100 transition-opacity' : ''}`}>
           <div className={`w-16 h-16 rounded-full border-2 ${story.isYou ? 'border-primary-container' : 'border-surface-variant'} p-[2px] relative cursor-pointer`}>
             <Avatar
+              className="h-full w-full"
               alt={story.username}
-              className="border border-surface"
-              name={story.username}
-              sizeClassName="h-full w-full"
               src={story.avatar}
-              textClassName="text-[12px]"
+              name={story.username}
             />
             {story.isYou && (
               <div className="absolute bottom-0 right-0 bg-primary-container text-white rounded-full w-5 h-5 flex items-center justify-center border-2 border-surface">

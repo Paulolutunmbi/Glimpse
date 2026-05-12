@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-background text-on-background font-body-md min-h-screen flex antialiased;
+    @apply bg-background text-on-background font-body-md min-h-screen flex antialiased overflow-x-hidden;
   }
 }
 
@@ -44,6 +44,16 @@
 
 .press-in:active {
   transform: scale(0.98);
+}
+
+.glimpse-logo {
+  height: clamp(56px, 9vw, 160px);
+  width: auto;
+}
+
+.glimpse-logo-compact {
+  height: clamp(44px, 7vw, 120px);
+  width: auto;
 }
 
 .material-symbols-filled {

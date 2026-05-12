@@ -143,10 +143,10 @@ const Verify = () => {
     <div className="min-h-screen w-full bg-surface flex items-center justify-center p-md text-on-surface antialiased selection:bg-primary-container selection:text-white">
       <main className="w-full max-w-[400px] bg-surface-container-lowest rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-xl flex flex-col items-center">
         <div className="mb-xl text-center">
-          <img
-            src="/images/glimpse-logo.png"
-            alt="Glimpse"
-            className="h-8 w-auto mx-auto"
+            <img
+              src="/images/glimpse-logo.png"
+              alt="Glimpse"
+              className="glimpse-logo object-contain"
           />
         </div>
 

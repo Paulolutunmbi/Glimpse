@@ -39,7 +39,6 @@ export default function ReelCard({ reel, currentUser }) {
     }, [followIds, reel]);
   const videoSrc = videoItem?.url || reel?.video || reel?.image || '';
   const avatarSrc = reel?.user?.avatar || reel?.user?.profilePicture || '';
-  const avatarName = reel?.user?.username || reel?.user?.name || 'Creator';
 
   useEffect(() => {
     if (!postId) return;
@@ -99,10 +98,8 @@ export default function ReelCard({ reel, currentUser }) {
     };
 
     socket.on('post:liked', handlePostLiked);
-    socket.on('postLiked', handlePostLiked);
     return () => {
       socket.off('post:liked', handlePostLiked);
-      socket.off('postLiked', handlePostLiked);
     };
   }, [postId, currentUserId]);
 
@@ -224,12 +221,10 @@ export default function ReelCard({ reel, currentUser }) {
         <div className="flex max-w-[70%] flex-col gap-3">
           <div className="flex items-center gap-3">
             <Avatar
-              alt={reel?.user?.username || 'Creator'}
-              className="border border-white/20"
-              name={avatarName}
-              sizeClassName="h-10 w-10"
+              className="h-10 w-10 border border-white/20"
               src={avatarSrc}
-              textClassName="text-[12px]"
+              name={reel?.user?.username || reel?.user?.name}
+              alt={reel?.user?.username || 'Creator'}
             />
             <div>
               <p className="text-sm font-semibold">{reel?.user?.username || 'Creator'}</p>

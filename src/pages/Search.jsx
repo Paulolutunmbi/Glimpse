@@ -11,6 +11,7 @@ export default function Search() {
   const [results, setResults] = useState({ users: [], posts: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeUserId, setActiveUserId] = useState(null);
 
   const following = useMemo(
     () => new Set((relations?.following || []).map(String)),
@@ -84,7 +85,7 @@ export default function Search() {
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} search={query} onSearchChange={setQuery} />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 pb-safe md:px-8">
         <div className="mb-6 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3">
           <label className="text-xs text-on-surface-variant">Search users, reels, and moments</label>
           <input
@@ -107,19 +108,34 @@ export default function Search() {
                   typeof item._isFollowing === 'boolean'
                     ? item._isFollowing
                     : following.has(String(item._id || item.id));
+                const userId = String(item._id || item.id);
+                const isActive = activeUserId === userId;
                 return (
                   <div
-                    key={item._id || item.id}
-                    className="group flex items-center justify-between rounded-xl border border-outline-variant/30 bg-white px-4 py-3 transition-all hover:border-primary-container/40 hover:bg-surface-container-lowest active:scale-[0.99] focus-within:border-primary-container/60"
+                    key={userId}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors duration-200 focus-within:ring-2 focus-within:ring-primary-container/30 ${
+                      isActive
+                        ? 'border-primary-container/40 bg-surface-container-lowest'
+                        : 'border-outline-variant/30 bg-white hover:bg-surface-container-lowest'
+                    }`}
+                    role="button"
                     tabIndex={0}
+                    onPointerDown={() => setActiveUserId(userId)}
+                    onPointerUp={() => setTimeout(() => setActiveUserId(null), 180)}
+                    onPointerLeave={() => setActiveUserId(null)}
+                    onBlur={() => setActiveUserId(null)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        setActiveUserId(userId);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <Avatar
+                        src={item.profile?.avatar || item.profilePicture || item.avatar}
+                        name={item.username || item.name}
                         alt={item.username || 'User'}
-                        name={item.username || item.fullName || item.name}
-                        sizeClassName="h-10 w-10"
-                        src={item.profile?.avatar || item.profilePicture || item.avatar || ''}
-                        textClassName="text-[12px]"
+                        className="h-10 w-10"
                       />
                       <div>
                         <p className="text-sm font-semibold text-on-surface">{item.username || item.name}</p>
@@ -127,7 +143,7 @@ export default function Search() {
                       </div>
                     </div>
                     <button
-                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container/50 hover:text-primary-container active:scale-95"
+                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container hover:text-primary-container active:scale-95"
                       type="button"
                       onClick={() => handleToggleFollow(item._id || item.id, isFollowing)}
                     >

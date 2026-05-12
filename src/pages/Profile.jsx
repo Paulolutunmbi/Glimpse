@@ -15,9 +15,9 @@ const Profile = () => {
   ]);
 
   const avatar = profile?.avatar || user?.profilePicture || user?.avatar || '';
+  const bio = profile?.bio || user?.bio || '';
   const displayName = user?.fullName || user?.name || user?.username || '';
   const handle = user?.username || user?.name || '';
-  const bio = profile?.bio || user?.bio || '';
   const postsCount = stats?.postsCount ?? posts.length;
   const followersCount = stats?.followersCount ?? relations?.followers?.length ?? 0;
   const followingCount = stats?.followingCount ?? relations?.following?.length ?? 0;
@@ -29,7 +29,7 @@ const Profile = () => {
           <img
             src="/images/glimpse-logo-light-dark.png"
             alt="Glimpse"
-            className="h-8 w-auto object-contain"
+            className="glimpse-logo-compact object-contain"
           />
           <button
             className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
@@ -47,16 +47,12 @@ const Profile = () => {
           <div className="mb-md">
             <Avatar
               alt="Profile portrait"
-              className="border-4 border-surface-container-lowest shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]"
-              name={displayName || handle || 'Glimpse'}
-              sizeClassName="h-32 w-32"
+              className="h-32 w-32 border-4 border-surface-container-lowest shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]"
               src={avatar}
-              textClassName="text-[20px]"
+              name={displayName || handle}
             />
           </div>
-          {displayName ? (
-            <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
-          ) : null}
+          <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
           {handle ? (
             <p className="mb-md font-body-md text-body-md text-on-surface-variant">
               @{handle}
@@ -66,11 +62,7 @@ const Profile = () => {
             <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface md:max-w-md">
               {bio}
             </p>
-          ) : (
-            <p className="mb-lg max-w-[420px] font-body-md text-body-md text-on-surface-variant md:max-w-md">
-              No bio yet.
-            </p>
-          )}
+          ) : null}
           <div className="mb-xl flex flex-wrap justify-center gap-md">
             <button
               className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95"

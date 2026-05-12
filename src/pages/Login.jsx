@@ -72,11 +72,11 @@ const Login = () => {
         <section className="relative z-10 flex w-full flex-1 flex-col items-center justify-start border-t border-outline-variant/60 bg-background px-5 pb-8 pt-8 min-[420px]:w-1/2 min-[420px]:justify-center min-[420px]:border-t-0 min-[420px]:px-6 min-[420px]:pt-16 lg:px-12">
           <div className="w-full min-w-0 max-w-[360px] space-y-8 lg:max-w-[448px]">
             <div className="flex justify-center min-[420px]:justify-start">
-              <img
-                src="/images/glimpse-logo-light-dark.png"
-                alt="Glimpse"
-                className="h-[200px] w-auto object-contain"
-              />
+                <img
+                  src="/images/glimpse-logo-light-dark.png"
+                  alt="Glimpse"
+                  className="glimpse-logo-compact object-contain"
+                />
             </div>
             <div className="space-y-2 text-center min-[420px]:text-left">
               <h1 className="font-h1 text-[24px] font-bold leading-tight tracking-[-0.02em] text-on-background md:text-h1">

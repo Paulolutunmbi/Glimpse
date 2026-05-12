@@ -10,8 +10,6 @@ const signupPhotos = {
     'https://unsplash.com/photos/Ib0KLrAfb-E/download?force=true&w=720',
   right:
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=720&q=85',
-  avatar:
-    'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=160&q=85',
 };
 
 const Signup = () => {
@@ -66,11 +64,11 @@ const Signup = () => {
           <div className="mx-auto w-full max-w-[384px]">
             <div className="mb-xl text-center md:text-left">
               <div className="flex justify-center min-[420px]:justify-start">
-                <img
-                  src="/images/glimpse-logo-light-dark.png"
-                  alt="Glimpse"
-                  className="h-[200px] w-auto"
-                />
+                  <img
+                    src="/images/glimpse-logo-light-dark.png"
+                    alt="Glimpse"
+                    className="glimpse-logo-compact object-contain"
+                  />
               </div>
               <h2 className="font-h2 text-h2 text-on-surface mb-xs mt-sm">Create your account</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -103,7 +101,7 @@ const Signup = () => {
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     className="w-full bg-surface-container-low border border-surface-variant rounded-xl px-4 py-3 pl-12 text-on-surface font-body-md placeholder:text-on-surface-variant focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all duration-200"
-                    placeholder="e.g. wanderlust24"
+                    placeholder="username"
                   />
                 </div>
               </div>
@@ -375,23 +373,6 @@ const Signup = () => {
                   </div>
                 </div>
               </article>
-            </div>
-
-            <div className="absolute right-8 top-8 flex items-center gap-md rounded-xl border border-white/40 bg-white/75 p-md shadow-[0_18px_50px_-26px_rgba(42,27,22,0.65)] backdrop-blur-md lg:right-12 lg:top-12">
-              <div className="h-12 w-12 overflow-hidden rounded-full bg-surface-container-highest">
-                <img
-                  alt="Mia smiling"
-                  className="h-full w-full object-cover"
-                  src={signupPhotos.avatar}
-                />
-              </div>
-              <div>
-                <p className="font-label-md text-label-md text-on-surface">Mia caught a glimpse</p>
-                <p className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[16px] text-primary-container">favorite</span>
-                  Just now
-                </p>
-              </div>
             </div>
 
             <div className="absolute bottom-10 left-8 right-8 text-white lg:bottom-12 lg:left-12">

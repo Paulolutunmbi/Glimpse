@@ -215,7 +215,7 @@ const Settings = () => {
             <img
               src="/images/glimpse-logo-light-dark.png"
               alt="Glimpse"
-              className="h-[clamp(48px,6vw,96px)] w-auto object-contain"
+              className="glimpse-logo-compact object-contain"
             />
           </div>
           <nav className="hidden items-center gap-4 md:flex">
@@ -262,10 +262,9 @@ const Settings = () => {
                 >
                   <Avatar
                     alt="Profile picture preview"
-                    name={username || user?.username || user?.name}
-                    sizeClassName="h-full w-full"
+                    className="h-full w-full"
                     src={avatarPreview}
-                    textClassName="text-[14px]"
+                    name={username || user?.username || user?.name}
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                     <span className="material-symbols-outlined text-white">photo_camera</span>

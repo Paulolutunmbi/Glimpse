@@ -4,8 +4,6 @@ import { userService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { getApiErrorMessage } from '../utils/errors';
 
-const backgroundImageUrl =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDMz8ScvU_5mTOboT-iwVSBBpnCN-s9ros5qOnSGy5rrXQibzEP6vKyP-9H5_l5i31fvXhmRIYOLXYl319Dix6wiQE0RFb_Eo5jcTRK2L-I9x0FOeoRKvLMZnzNxJd-Z1W1hpjY2scV0Yxfx21WEaJ5NvmZ_P5AacT98DxnpFE6GStQzUMmELiZ5sy9H81JIQHv_WgwtrWGPWJQ0EG_suB_SNYL35ZRau8z8yCA4ExtnQv2U3y_pMPKTB4V9gtmOCKWcfkSXIX0DA';
 
 const preferenceOptions = [
   { value: 'Travel', icon: 'flight' },
@@ -143,8 +141,7 @@ const ProfileSetup = () => {
   return (
     <div className="relative min-h-screen bg-background text-on-background antialiased">
       <div
-        className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center bg-no-repeat blur-[60px] opacity-30"
-        style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-br from-primary-container/20 via-transparent to-secondary-container/20 blur-[60px] opacity-80"
         aria-hidden="true"
       />
 
@@ -217,7 +214,7 @@ const ProfileSetup = () => {
                     className="w-full rounded-xl border border-surface-variant bg-surface-container-low px-4 py-3 font-body-md text-body-md text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-container"
                     id="username"
                     name="username"
-                    placeholder="@yourname"
+                    placeholder="@username"
                     type="text"
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
@@ -233,7 +230,7 @@ const ProfileSetup = () => {
                     className="w-full resize-none rounded-xl border border-surface-variant bg-surface-container-low px-4 py-3 font-body-md text-body-md text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-container"
                     id="bio"
                     name="bio"
-                    placeholder="Photographer, traveler, coffee enthusiast..."
+                    placeholder="Share a short bio"
                     rows={3}
                     value={bio}
                     onChange={(event) => setBio(event.target.value)}
@@ -255,7 +252,7 @@ const ProfileSetup = () => {
                       className="w-full rounded-xl border border-surface-variant bg-surface-container-low py-3 pl-11 pr-4 font-body-md text-body-md text-on-surface shadow-sm transition-all placeholder:text-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-container"
                       id="extraInfo"
                       name="extraInfo"
-                      placeholder="Website, location, or anything else"
+                      placeholder="Website, location, or a link"
                       type="text"
                       value={extraInfo}
                       onChange={(event) => setExtraInfo(event.target.value)}

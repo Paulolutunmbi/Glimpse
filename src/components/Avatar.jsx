@@ -1,40 +1,38 @@
-const getInitials = (name = '') => {
-  const trimmed = String(name || '').trim();
-  if (!trimmed) return 'G';
-  const parts = trimmed.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+import { useMemo, useState } from 'react';
+
+const getInitials = (value) => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  const parts = trimmed.split(/\s+/).slice(0, 2);
+  return parts.map((part) => part[0]).join('').toUpperCase();
 };
 
-export default function Avatar({
-  src,
-  name,
-  alt,
-  sizeClassName = 'h-10 w-10',
-  className = '',
-  textClassName = 'text-sm',
-  fallbackClassName = '',
-}) {
-  const initials = getInitials(name || alt);
-  const shared = `inline-flex items-center justify-center rounded-full ${sizeClassName} ${className}`;
+export default function Avatar({ src, name, className = '', alt = 'User avatar' }) {
+  const [hasError, setHasError] = useState(false);
+  const initials = useMemo(() => getInitials(name), [name]);
+  const showFallback = !src || hasError;
 
-  if (src) {
+  if (showFallback) {
     return (
-      <img
-        alt={alt || name || 'User avatar'}
-        className={`${shared} object-cover`}
-        src={src}
-      />
+      <div
+        className={`flex items-center justify-center rounded-full bg-surface-container-high text-on-surface ${className}`}
+        aria-label={alt}
+        role="img"
+      >
+        <span className="text-xs font-semibold">
+          {initials || 'U'}
+        </span>
+      </div>
     );
   }
 
   return (
-    <div
-      className={`${shared} bg-gradient-to-br from-rose-400/90 via-orange-400/80 to-amber-300/90 text-white ${fallbackClassName}`}
-      aria-label={alt || name || 'User avatar'}
-      role="img"
-    >
-      <span className={`font-semibold ${textClassName}`}>{initials}</span>
-    </div>
+    <img
+      className={`rounded-full object-cover ${className}`}
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      loading="lazy"
+    />
   );
 }

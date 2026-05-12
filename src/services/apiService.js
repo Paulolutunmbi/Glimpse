@@ -255,6 +255,35 @@ export const notificationService = {
     },
 };
 
+export const adminService = {
+    verify: async () => {
+        const response = await api.get('/api/admin/verify');
+        return response.data;
+    },
+    listUsers: async ({ page = 1, limit = 20, search = '' } = {}) => {
+        const response = await api.get('/api/admin/users', {
+            params: { page, limit, search },
+        });
+        return response.data;
+    },
+    getUser: async (userId) => {
+        const response = await api.get(`/api/admin/users/${userId}`);
+        return response.data;
+    },
+    banUser: async (userId, payload = {}) => {
+        const response = await api.post(`/api/admin/users/${userId}/ban`, payload);
+        return response.data;
+    },
+    unbanUser: async (userId) => {
+        const response = await api.post(`/api/admin/users/${userId}/unban`);
+        return response.data;
+    },
+    deleteUser: async (userId) => {
+        const response = await api.delete(`/api/admin/users/${userId}`);
+        return response.data;
+    },
+};
+
 export const searchService = {
     search: async ({ query, limit = 10 } = {}) => {
         const response = await api.get('/api/search', {

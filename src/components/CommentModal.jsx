@@ -357,9 +357,7 @@ const CommentModal = ({
               <div key={commentKey} className="flex gap-3">
                 <Avatar
                   alt={c.username || "Comment author"}
-                  className="shrink-0"
-                  name={c.username || currentUser?.username || 'User'}
-                  sizeClassName="h-8 w-8"
+                  className="h-8 w-8 shrink-0"
                   src={
                     c.avatar ||
                     currentUser?.profilePicture ||
@@ -367,7 +365,7 @@ const CommentModal = ({
                     post?.user?.avatar ||
                     ''
                   }
-                  textClassName="text-[10px]"
+                  name={c.username || currentUser?.username || post?.user?.username}
                 />
                 <div className="flex-1 flex items-start gap-2">
                   <div className="flex-1 bg-surface-variant rounded-xl p-3 rounded-tl-none">

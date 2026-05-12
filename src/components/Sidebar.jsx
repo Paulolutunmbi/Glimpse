@@ -20,7 +20,7 @@ export default function Sidebar() {
         <img
           src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="h-[clamp(52px,7vw,110px)] w-auto object-contain"
+          className="glimpse-logo object-contain"
         />
         <span className="text-lg font-semibold tracking-wide text-on-surface">Glimpse</span>
       </div>
