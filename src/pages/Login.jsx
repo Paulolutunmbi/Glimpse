@@ -38,7 +38,7 @@ const Login = () => {
       const payload = { email: email.trim(), password };
       const data = await authService.login(payload);
       const token = data?.token || data?.data?.token || data?.accessToken || data?.jwt;
-      const redirectTo = data?.redirectTo || data?.data?.redirectTo || '/profile';
+      const redirectTo = data?.redirectTo || data?.data?.redirectTo || '/';
 
       if (token) {
         setAuthToken(token);

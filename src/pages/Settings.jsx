@@ -208,7 +208,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased">
-      <header className="fixed top-0 z-50 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 font-['Plus_Jakarta_Sans']">
           <div className="flex items-center gap-3">
             <img

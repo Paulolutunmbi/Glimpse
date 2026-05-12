@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useUser } from './context/UserContext.jsx';
+import AuthenticatedLayout from './components/AuthenticatedLayout.jsx';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import Login from './pages/Login';
@@ -9,6 +10,12 @@ import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Signup from './pages/Signup';
 import Verify from './pages/Verify';
+import SavedMoments from './pages/SavedMoments';
+import CreateMoment from './pages/CreateMoment';
+import Reels from './pages/Reels';
+import Messages from './pages/Messages';
+import Search from './pages/Search';
+import Notifications from './pages/Notifications';
 
 const LoadingScreen = () => (
   <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
@@ -25,14 +32,19 @@ const RequireAuth = ({ children }) => {
   return children;
 };
 
-const RequireProfileComplete = ({ children }) => {
+const hasCompletedOnboarding = (user) => {
+  if (!user) return false;
+  if (typeof user.onboardingCompleted === 'boolean') return user.onboardingCompleted;
+  if (user.profileCompleted) return true;
+  return user.isFirstLogin === false;
+};
+
+const RequireOnboardingComplete = ({ children }) => {
   const { user, isLoading } = useUser();
 
   if (isLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
-  if (!user.profileCompleted) {
-    return <Navigate to="/profile-setup" replace />;
-  }
+  if (!hasCompletedOnboarding(user)) return <Navigate to="/profile-setup" replace />;
 
   return children;
 };
@@ -42,7 +54,7 @@ const RequireProfileSetup = ({ children }) => {
 
   if (isLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
-  if (user?.profileCompleted) return <Navigate to="/profile" replace />;
+  if (hasCompletedOnboarding(user)) return <Navigate to="/" replace />;
 
   return children;
 };
@@ -67,35 +79,24 @@ function App() {
           }
         />
         <Route
-          path="/"
           element={
             <RequireAuth>
-              <RequireProfileComplete>
-                <Home />
-              </RequireProfileComplete>
+              <RequireOnboardingComplete>
+                <AuthenticatedLayout />
+              </RequireOnboardingComplete>
             </RequireAuth>
           }
-        />
-        <Route
-          path="/profile"
-          element={
-            <RequireAuth>
-              <RequireProfileComplete>
-                <Profile />
-              </RequireProfileComplete>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <RequireAuth>
-              <RequireProfileComplete>
-                <Settings />
-              </RequireProfileComplete>
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="/" element={<Home />} />
+          <Route path="/reels" element={<Reels />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/saved" element={<SavedMoments />} />
+          <Route path="/create" element={<CreateMoment />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

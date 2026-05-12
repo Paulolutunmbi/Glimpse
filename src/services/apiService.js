@@ -80,6 +80,10 @@ export const postService = {
         const response = await api.post(`/api/posts/${postId}/share`);
         return response.data;
     },
+    updateVisibility: async (postId, visibility) => {
+        const response = await api.patch(`/api/posts/${postId}/visibility`, { visibility });
+        return response.data;
+    },
     deletePost: async (postId) => {
         const response = await api.delete(`/api/posts/${postId}`);
         return response.data;
@@ -230,6 +234,57 @@ export const settingsService = {
     },
     unmuteUser: async (payload) => {
         const response = await api.post('/api/user/settings/unmute', payload);
+        return response.data;
+    },
+};
+
+export const notificationService = {
+    getNotifications: async ({ cursor, limit = 20 } = {}) => {
+        const response = await api.get('/api/notifications', {
+            params: { cursor, limit },
+        });
+        return response.data;
+    },
+    markRead: async (notificationId) => {
+        const response = await api.patch(`/api/notifications/${notificationId}/read`);
+        return response.data;
+    },
+    markAllRead: async () => {
+        const response = await api.patch('/api/notifications/read-all');
+        return response.data;
+    },
+};
+
+export const searchService = {
+    search: async ({ query, limit = 10 } = {}) => {
+        const response = await api.get('/api/search', {
+            params: { q: query, limit },
+        });
+        return response.data;
+    },
+};
+
+export const messageService = {
+    getConversations: async () => {
+        const response = await api.get('/api/messages/conversations');
+        return response.data;
+    },
+    createConversation: async (userId) => {
+        const response = await api.post('/api/messages/conversations', { userId });
+        return response.data;
+    },
+    getMessages: async ({ conversationId, cursor, limit = 30 }) => {
+        const response = await api.get(`/api/messages/${conversationId}`, {
+            params: { cursor, limit },
+        });
+        return response.data;
+    },
+    sendMessage: async ({ conversationId, text }) => {
+        const response = await api.post(`/api/messages/${conversationId}`, { text });
+        return response.data;
+    },
+    markConversationRead: async (conversationId) => {
+        const response = await api.patch(`/api/messages/${conversationId}/read`);
         return response.data;
     },
 };

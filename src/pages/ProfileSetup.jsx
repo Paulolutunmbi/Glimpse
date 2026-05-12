@@ -96,6 +96,7 @@ const ProfileSetup = () => {
         preferences: preferenceList,
         isFirstLogin: false,
         profileCompleted: true,
+        onboardingCompleted: true,
       });
       updatedPayload = extractProfilePayload(response) || updatedPayload;
 
@@ -106,7 +107,7 @@ const ProfileSetup = () => {
         }
       }
 
-      navigate('/profile', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to complete profile.'));
     } finally {
@@ -122,6 +123,7 @@ const ProfileSetup = () => {
       const response = await userService.updateProfile({
         isFirstLogin: false,
         profileCompleted: false,
+        onboardingCompleted: true,
       });
       const updatedPayload = extractProfilePayload(response);
       if (updatedPayload) {
@@ -130,7 +132,7 @@ const ProfileSetup = () => {
           updateUser(updatedPayload.user);
         }
       }
-      navigate('/profile', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to skip profile setup.'));
     } finally {

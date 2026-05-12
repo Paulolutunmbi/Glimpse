@@ -3,7 +3,7 @@ import { userService } from '../services/apiService';
 
 const fallbackAvatar = '/images/glimpse-icon.png';
 
-export default function Suggestions({ suggestions, onFollowChange }) {
+export default function Suggestions({ currentUser, suggestions, discovery, onFollowChange }) {
   const [followingIds, setFollowingIds] = useState(new Set());
 
   const handleFollow = async (creatorId) => {
@@ -15,7 +15,8 @@ export default function Suggestions({ suggestions, onFollowChange }) {
     setFollowingIds(next);
 
     try {
-      await userService.toggleFollow(creatorId);
+      const isFollowing = previous.has(creatorId);
+      await userService.toggleFollow(creatorId, isFollowing);
       onFollowChange?.();
     } catch {
       setFollowingIds(previous);
@@ -74,6 +75,38 @@ export default function Suggestions({ suggestions, onFollowChange }) {
         <a className="mt-6 block text-center text-primary-container hover:underline font-label-sm" href="#creators">
           View all recommendations
         </a>
+
+        {discovery?.trendingHashtags?.length ? (
+          <div className="mt-8">
+            <h3 className="mb-3 font-label-md text-on-surface">Trending Hashtags</h3>
+            <div className="flex flex-wrap gap-2">
+              {discovery.trendingHashtags.map((tag) => (
+                <span
+                  key={tag.tag}
+                  className="rounded-full bg-surface-container-high px-3 py-1 text-[12px] text-on-surface"
+                >
+                  #{tag.tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {discovery?.exploreCategories?.length ? (
+          <div className="mt-6">
+            <h3 className="mb-3 font-label-md text-on-surface">Explore Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              {discovery.exploreCategories.map((tag) => (
+                <span
+                  key={tag.tag}
+                  className="rounded-full border border-outline-variant px-3 py-1 text-[12px] text-on-surface-variant"
+                >
+                  {tag.tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </aside>
   );

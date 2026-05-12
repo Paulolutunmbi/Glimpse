@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import API, { onAuthLogout } from '../api/axios';
+import { messageService, notificationService } from '../services/apiService';
+import { socket } from '../socket';
 
 const UserContext = createContext(null);
 
@@ -11,6 +13,8 @@ export const UserProvider = ({ children }) => {
   const [posts, setPosts] = useState([]);
   const [savedPosts, setSavedPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
 
   const refreshUser = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -48,9 +52,61 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
+  const refreshCounts = useCallback(async () => {
+    if (!user?.id && !user?._id) return;
+    try {
+      const notifications = await notificationService.getNotifications({ limit: 1 });
+      setNotificationCount(Number(notifications?.unreadCount) || 0);
+    } catch {
+      setNotificationCount(0);
+    }
+
+    try {
+      const conversations = await messageService.getConversations();
+      const list = Array.isArray(conversations?.data) ? conversations.data : [];
+      const totalUnread = list.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
+      setMessageCount(totalUnread);
+    } catch {
+      setMessageCount(0);
+    }
+  }, [user]);
+
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  useEffect(() => {
+    const userId = user?.id || user?._id;
+    if (!userId) return;
+    socket.emit('joinUser', userId);
+    refreshCounts();
+
+    const handleNotificationCreated = () => {
+      setNotificationCount((prev) => prev + 1);
+    };
+
+    const handleConversationUpdated = () => {
+      refreshCounts();
+    };
+
+    const handleFollowUpdated = (payload) => {
+      if (!payload?.userId) return;
+      if (String(payload.userId) === String(userId)) {
+        refreshUser();
+      }
+    };
+
+    socket.on('notification:created', handleNotificationCreated);
+    socket.on('conversation:updated', handleConversationUpdated);
+    socket.on('followUpdated', handleFollowUpdated);
+
+    return () => {
+      socket.emit('leaveUser', userId);
+      socket.off('notification:created', handleNotificationCreated);
+      socket.off('conversation:updated', handleConversationUpdated);
+      socket.off('followUpdated', handleFollowUpdated);
+    };
+  }, [user, refreshCounts, refreshUser]);
 
   useEffect(() => {
     const unsubscribe = onAuthLogout(() => {
@@ -104,6 +160,8 @@ export const UserProvider = ({ children }) => {
     setPosts([]);
     setSavedPosts([]);
     setIsLoading(false);
+    setNotificationCount(0);
+    setMessageCount(0);
   }, []);
 
   const value = useMemo(
@@ -115,7 +173,10 @@ export const UserProvider = ({ children }) => {
       posts,
       savedPosts,
       isLoading,
+      notificationCount,
+      messageCount,
       refreshUser,
+      refreshCounts,
       setAuthToken,
       updateUser,
       updateProfilePayload,
@@ -129,7 +190,10 @@ export const UserProvider = ({ children }) => {
       posts,
       savedPosts,
       isLoading,
+      notificationCount,
+      messageCount,
       refreshUser,
+      refreshCounts,
       setAuthToken,
       updateUser,
       updateProfilePayload,
