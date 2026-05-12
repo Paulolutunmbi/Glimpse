@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
 
+const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
+
 const Profile = () => {
   const navigate = useNavigate();
   const { user, profile, stats, relations, posts, savedPosts } = useUser();
   const [activeTab, setActiveTab] = useState('posts');
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const gridItems = useMemo(() => (activeTab === 'saved' ? savedPosts : posts), [
     activeTab,
@@ -29,16 +33,28 @@ const Profile = () => {
           <img
             src="/images/glimpse-logo-light-dark.png"
             alt="Glimpse"
-            className="glimpse-logo-compact object-contain"
+            className="h-8 w-auto object-contain"
           />
-          <button
-            className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
-            type="button"
-            aria-label="Open settings"
-            onClick={() => navigate('/settings')}
-          >
-            <span className="material-symbols-outlined text-[#FF5A5F]">settings</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
+                type="button"
+                aria-label="Admin"
+                onClick={() => navigate('/admin')}
+              >
+                <span className="material-symbols-outlined text-[#FF5A5F]">admin_panel_settings</span>
+              </button>
+            )}
+            <button
+              className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
+              type="button"
+              aria-label="Open settings"
+              onClick={() => navigate('/settings')}
+            >
+              <span className="material-symbols-outlined text-[#FF5A5F]">settings</span>
+            </button>
+          </div>
         </div>
       </header>
 

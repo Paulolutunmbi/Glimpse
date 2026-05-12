@@ -16,6 +16,7 @@ import Reels from './pages/Reels';
 import Messages from './pages/Messages';
 import Search from './pages/Search';
 import Notifications from './pages/Notifications';
+import Admin from './pages/Admin';
 
 const LoadingScreen = () => (
   <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
@@ -93,6 +94,7 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/saved" element={<SavedMoments />} />
           <Route path="/create" element={<CreateMoment />} />

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import API, { onAuthLogout } from '../api/axios';
+import API, { onAuthLogout, onAdminAccessAttempt } from '../api/axios';
 import { messageService, notificationService } from '../services/apiService';
 import { setSocketAuth, socket } from '../socket';
 
@@ -110,7 +110,7 @@ export const UserProvider = ({ children }) => {
   }, [user, refreshCounts, refreshUser]);
 
   useEffect(() => {
-    const unsubscribe = onAuthLogout(() => {
+    const unsubscribeAuthLogout = onAuthLogout(() => {
       setUser(null);
       setProfile(null);
       setStats(null);
@@ -120,7 +120,22 @@ export const UserProvider = ({ children }) => {
       setIsLoading(false);
     });
 
-    return unsubscribe;
+    const unsubscribeAdminAccess = onAdminAccessAttempt(({ attemptsRemaining }) => {
+      if (typeof attemptsRemaining === 'number') {
+        sessionStorage.setItem(
+          'accessAlert',
+          JSON.stringify({
+            message: 'Unauthorized access detected.',
+            attemptsRemaining,
+          })
+        );
+      }
+    });
+
+    return () => {
+      unsubscribeAuthLogout();
+      unsubscribeAdminAccess();
+    };
   }, []);
 
   const setAuthToken = useCallback((token) => {
