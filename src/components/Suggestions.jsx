@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { userService } from '../services/apiService';
 import Avatar from './Avatar';
 
-export default function Suggestions({ currentUser, suggestions, discovery, onFollowChange }) {
+export default function Suggestions({ suggestions, discovery, onFollowChange }) {
   const [followingIds, setFollowingIds] = useState(new Set());
 
   const handleFollow = async (creatorId) => {

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import Suggestions from '../components/Suggestions';
@@ -13,7 +13,6 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [feedType, setFeedType] = useState('latest');
@@ -25,6 +24,10 @@ export default function Home() {
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [followOverrides, setFollowOverrides] = useState({});
   const currentUserId = user?.id || user?._id || null;
+  const cursorRef = useRef(null);
+  const hasMoreRef = useRef(true);
+  const requestIdRef = useRef(0);
+  const savedIdsRef = useRef(new Set());
 
   const closeDiscover = useCallback(() => {
     setDiscoverOpen(false);
@@ -54,12 +57,16 @@ export default function Home() {
     [savedPosts]
   );
 
+  useEffect(() => {
+    savedIdsRef.current = savedIds;
+  }, [savedIds]);
+
   const followingIds = useMemo(
     () => new Set((relations?.following || []).map(String)),
     [relations]
   );
 
-  const normalizePost = (post, userId) => {
+  const normalizePost = useCallback((post, userId) => {
     const likes = Array.isArray(post?.likes) ? post.likes : [];
     const postId = post._id || post.id;
     return {
@@ -69,10 +76,29 @@ export default function Home() {
       likes,
       likesCount: likes.length || post.likesCount || post.likes || 0,
       isLiked: userId ? likes.includes(userId) : false,
-      isSaved: savedIds.has(postId),
+      isSaved: savedIdsRef.current.has(postId),
       timestamp: formatTimestamp(post.createdAt),
     };
-  };
+  }, []);
+
+  const mergeUniquePosts = useCallback((base = [], incoming = [], { prepend = false } = {}) => {
+    const byId = new Map();
+    const addItem = (item) => {
+      const id = item?._id || item?.id;
+      if (!id) return;
+      byId.set(String(id), item);
+    };
+
+    if (prepend) {
+      incoming.forEach(addItem);
+      base.forEach(addItem);
+    } else {
+      base.forEach(addItem);
+      incoming.forEach(addItem);
+    }
+
+    return Array.from(byId.values());
+  }, []);
 
   const stories = useMemo(() => {
     if (!user) return [];
@@ -89,9 +115,11 @@ export default function Home() {
 
   const loadFeed = useCallback(
     async ({ nextCursor = null, replace = false } = {}) => {
-      if (!hasMore && nextCursor) return;
+      if (!hasMoreRef.current && nextCursor) return;
       if (nextCursor) setIsFetchingMore(true);
       setError(null);
+
+      const requestId = ++requestIdRef.current;
 
       try {
         const response = await postService.getFeed({
@@ -101,27 +129,34 @@ export default function Home() {
         });
         const incoming = Array.isArray(response?.data) ? response.data : [];
         const normalized = incoming.map((p) => normalizePost(p, currentUserId));
-        setPosts((prev) => (replace ? normalized : [...prev, ...normalized]));
-        setCursor(response?.nextCursor || null);
-        setHasMore(Boolean(response?.hasMore));
+        if (requestId !== requestIdRef.current) return;
+        setPosts((prev) => mergeUniquePosts(replace ? [] : prev, normalized));
+        const next = response?.nextCursor || null;
+        const more = Boolean(response?.hasMore);
+        cursorRef.current = next;
+        hasMoreRef.current = more;
+        setHasMore(more);
       } catch (err) {
         console.error('Failed to load posts:', err);
         setError('Could not connect to the server. Is the backend running?');
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
         setIsFetchingMore(false);
       }
     },
-    [currentUserId, feedType, hasMore]
+    [currentUserId, feedType, mergeUniquePosts, normalizePost]
   );
 
   useEffect(() => {
     setLoading(true);
-    setPosts([]);
-    setCursor(null);
+    requestIdRef.current += 1;
     setHasMore(true);
+    cursorRef.current = null;
+    hasMoreRef.current = true;
     loadFeed({ replace: true });
-  }, [feedType, loadFeed]);
+  }, [feedType, currentUserId, loadFeed]);
 
   useEffect(() => {
     let isMounted = true;
@@ -143,13 +178,13 @@ export default function Home() {
       if (!hasMore || isFetchingMore) return;
       const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 800;
       if (nearBottom) {
-        loadFeed({ nextCursor: cursor });
+        loadFeed({ nextCursor: cursorRef.current });
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [cursor, hasMore, isFetchingMore, loadFeed]);
+  }, [hasMore, isFetchingMore, loadFeed]);
 
   useEffect(() => {
     if (!discoverQuery.trim()) {
@@ -204,10 +239,22 @@ export default function Home() {
       if (!newPost) return;
       if (!canViewPost(newPost)) return;
       setPosts((prev) => {
-        const exists = prev.some((item) => item._id === newPost._id || item.id === newPost._id);
-        if (exists) return prev;
-        return [normalizePost(newPost, currentUserId), ...prev];
+        const normalized = normalizePost(newPost, currentUserId);
+        return mergeUniquePosts(prev, [normalized], { prepend: true });
       });
+    };
+
+    const handlePostUpdated = (payload) => {
+      const incoming = payload?.post || payload;
+      const postId = incoming?._id || incoming?.id;
+      if (!postId) return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? normalizePost({ ...item, ...incoming }, currentUserId)
+            : item
+        )
+      );
     };
 
     const handlePostLiked = (payload) => {
@@ -237,8 +284,10 @@ export default function Home() {
     };
 
     socket.on('post:created', handlePostCreated);
+    socket.on('post:updated', handlePostUpdated);
     socket.on('post:liked', handlePostLiked);
     socket.on('postDeleted', handlePostDeleted);
+    socket.on('post:deleted', handlePostDeleted);
     const handlePostSaved = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
@@ -269,12 +318,14 @@ export default function Home() {
 
     return () => {
       socket.off('post:created', handlePostCreated);
+      socket.off('post:updated', handlePostUpdated);
       socket.off('post:liked', handlePostLiked);
       socket.off('postDeleted', handlePostDeleted);
+      socket.off('post:deleted', handlePostDeleted);
       socket.off('postSaved', handlePostSaved);
       socket.off('post:visibility', handleVisibility);
     };
-  }, [currentUserId, canViewPost]);
+  }, [currentUserId, canViewPost, mergeUniquePosts, normalizePost]);
 
   return (
     <>
@@ -310,7 +361,7 @@ export default function Home() {
             {stories.length > 0 ? <StoryRow stories={stories} /> : null}
 
             {/* Loading state */}
-            {loading && (
+            {loading && posts.length === 0 && (
               <div className="flex flex-col gap-lg">
                 {[1, 2].map((i) => (
                   <div

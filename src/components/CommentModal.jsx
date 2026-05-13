@@ -18,8 +18,12 @@ const CommentModal = ({
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [error, setError] = useState("");
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const nextClientId = useRef(1);
+  const editWindowMinutes = Number(import.meta.env.VITE_COMMENT_EDIT_WINDOW_MINUTES || 15);
+  const deleteWindowMinutes = Number(import.meta.env.VITE_COMMENT_DELETE_WINDOW_MINUTES || editWindowMinutes);
 
   const postId = useMemo(() => post?._id || post?.id, [post]);
   const imageSrc = post?.imageUrl || post?.image;
@@ -60,8 +64,21 @@ const CommentModal = ({
     setEditingText("");
   }, []);
 
+  const upsertComment = useCallback((incoming) => {
+    const incomingId = incoming?._id || incoming?.id;
+    setComments((prev) => {
+      if (!incomingId) return [...prev, incoming];
+      const index = prev.findIndex((item) => item._id === incomingId || item.id === incomingId);
+      if (index === -1) return [...prev, incoming];
+      const next = [...prev];
+      next[index] = { ...next[index], ...incoming };
+      return next;
+    });
+  }, []);
+
   const handleClose = useCallback(() => {
     setMenuOpenId(null);
+    setConfirmDeleteId(null);
     handleCancelEdit();
     onClose();
   }, [handleCancelEdit, onClose]);
@@ -89,24 +106,14 @@ const CommentModal = ({
     const handleCommentCreated = (payload) => {
       const incoming = payload?.comment || payload;
       if (!incoming) return;
-      const incomingId = incoming._id || incoming.id;
-      setComments((prev) => {
-        if (incomingId && prev.some((item) => item._id === incomingId || item.id === incomingId)) {
-          return prev;
-        }
-        return [...prev, incoming];
-      });
+      upsertComment(incoming);
     };
 
     const handleCommentUpdated = (payload) => {
       const incoming = payload?.comment || payload;
       const incomingId = incoming?._id || incoming?.id;
       if (!incomingId) return;
-      setComments((prev) =>
-        prev.map((item) =>
-          item._id === incomingId || item.id === incomingId ? { ...item, ...incoming } : item
-        )
-      );
+      upsertComment(incoming);
     };
 
     const handleCommentDeleted = (payload) => {
@@ -125,11 +132,12 @@ const CommentModal = ({
       socket.off("comment:updated", handleCommentUpdated);
       socket.off("comment:deleted", handleCommentDeleted);
     };
-  }, [isOpen, postId]);
+  }, [isOpen, postId, upsertComment]);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setNowTs(Date.now());
     } else {
       document.body.style.overflow = "auto";
     }
@@ -192,7 +200,7 @@ const CommentModal = ({
             : `client-${nextClientId.current++}`,
       };
 
-      setComments((prev) => [...prev, resolvedComment]);
+      upsertComment(resolvedComment);
       setText("");
     } catch {
       setError("Failed to post comment. Please try again.");
@@ -233,9 +241,9 @@ const CommentModal = ({
           )
         );
       }
-    } catch {
+    } catch (err) {
       setComments(previousComments);
-      setError("Failed to update comment. Please try again.");
+      setError(err?.response?.data?.error || "Failed to update comment. Please try again.");
     }
   };
 
@@ -244,14 +252,42 @@ const CommentModal = ({
     const previousComments = comments;
     setComments((prev) => prev.filter((item) => getCommentKey(item) !== key));
     if (editingId === key) handleCancelEdit();
+    setConfirmDeleteId(null);
     const commentId = comment?._id || comment?.id;
     if (!commentId) return;
     try {
       await commentService.remove(commentId);
-    } catch {
+    } catch (err) {
       setComments(previousComments);
-      setError("Failed to delete comment. Please try again.");
+      setError(err?.response?.data?.error || "Failed to delete comment. Please try again.");
     }
+  };
+
+  const resolveCommentPermissions = (comment) => {
+    const commentId = comment?._id || comment?.id;
+    const isOwner =
+      (currentUser?.username && comment.username === currentUser.username) ||
+      (currentUserId && String(comment.userId) === String(currentUserId));
+    if (!isOwner) {
+      return { isOwner: false, canEdit: false, canDelete: false, commentId };
+    }
+
+    if (typeof comment?.canEdit === "boolean" || typeof comment?.canDelete === "boolean") {
+      return {
+        isOwner,
+        canEdit: Boolean(comment?.canEdit),
+        canDelete: Boolean(comment?.canDelete),
+        commentId,
+      };
+    }
+
+    const createdAt = comment?.createdAt ? new Date(comment.createdAt).getTime() : 0;
+    return {
+      isOwner,
+      canEdit: createdAt ? nowTs - createdAt <= editWindowMinutes * 60 * 1000 : false,
+      canDelete: createdAt ? nowTs - createdAt <= deleteWindowMinutes * 60 * 1000 : false,
+      commentId,
+    };
   };
 
   const isActive = text.trim().length > 0;
@@ -349,9 +385,8 @@ const CommentModal = ({
             </p>
           )}
           {comments.map((c) => {
-            const isOwner =
-              (currentUser?.username && c.username === currentUser.username) ||
-              (currentUserId && c.userId === currentUserId);
+            const permissions = resolveCommentPermissions(c);
+            const isOwner = permissions.isOwner;
             const commentKey = getCommentKey(c);
             return (
               <div key={commentKey} className="flex gap-3">
@@ -390,9 +425,12 @@ const CommentModal = ({
                         autoFocus
                       />
                     ) : (
-                      <span className="font-body-sm text-on-surface-variant">
-                        {c.text}
-                      </span>
+                      <div className="font-body-sm text-on-surface-variant">
+                        <span>{c.text}</span>
+                        {c?.isEdited ? (
+                          <span className="ml-2 text-[11px] font-medium text-on-surface-variant/80">edited</span>
+                        ) : null}
+                      </div>
                     )}
                   </div>
                   <div className="relative">
@@ -416,20 +454,27 @@ const CommentModal = ({
                     </button>
                     {menuOpenId === commentKey && (
                       <div className="absolute right-0 mt-2 w-28 rounded-lg border border-surface-variant bg-white shadow-lg overflow-hidden z-10">
-                        <button
-                          type="button"
-                          className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-surface-variant"
-                          onClick={() => handleStartEdit(c)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteComment(c)}
-                        >
-                          Delete
-                        </button>
+                        {permissions.canEdit ? (
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-surface-variant"
+                            onClick={() => handleStartEdit(c)}
+                          >
+                            Edit
+                          </button>
+                        ) : null}
+                        {permissions.canDelete ? (
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                            onClick={() => setConfirmDeleteId(commentKey)}
+                          >
+                            Delete
+                          </button>
+                        ) : null}
+                        {!permissions.canEdit && !permissions.canDelete ? (
+                          <div className="px-3 py-2 text-[11px] text-on-surface-variant">Time window expired</div>
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -471,6 +516,36 @@ const CommentModal = ({
           </div>
         </div>
       </div>
+
+      {confirmDeleteId ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDeleteId(null)}>
+          <div className="w-full max-w-xs rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
+            <h3 className="text-base font-semibold text-on-surface">Delete comment?</h3>
+            <p className="mt-2 text-sm text-on-surface-variant">This action cannot be undone.</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                className="rounded-lg border border-outline-variant/30 px-4 py-2"
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-error px-4 py-2 text-white"
+                type="button"
+                onClick={() => {
+                  const target = comments.find((item) => getCommentKey(item) === confirmDeleteId);
+                  if (target) {
+                    handleDeleteComment(target);
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 

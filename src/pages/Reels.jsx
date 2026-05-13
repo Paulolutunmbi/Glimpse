@@ -23,17 +23,24 @@ const canViewPost = ({ post, viewerId, relations }) => {
 export default function Reels() {
   const { user, relations, savedPosts } = useUser();
   const [reels, setReels] = useState([]);
-  const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const sentinelRef = useRef(null);
+  const cursorRef = useRef(null);
+  const hasMoreRef = useRef(true);
+  const requestIdRef = useRef(0);
+  const savedIdsRef = useRef(new Set());
   const currentUserId = user?.id || user?._id || null;
 
   const savedIds = useMemo(
     () => new Set((savedPosts || []).map((item) => item._id || item.id)),
     [savedPosts]
   );
+
+  useEffect(() => {
+    savedIdsRef.current = savedIds;
+  }, [savedIds]);
 
   const normalizeReel = useCallback(
     (post) => {
@@ -46,48 +53,62 @@ export default function Reels() {
         likes,
         likesCount: likes.length || post.likesCount || post.likes || 0,
         isLiked: currentUserId ? likes.includes(currentUserId) : false,
-        isSaved: savedIds.has(postId),
+        isSaved: savedIdsRef.current.has(postId),
       };
     },
-    [currentUserId, savedIds]
+    [currentUserId]
   );
 
   const loadReels = useCallback(
     async ({ nextCursor = null, replace = false } = {}) => {
-      if (!hasMore && nextCursor) return;
+      if (!hasMoreRef.current && nextCursor) return;
       if (nextCursor) setIsFetchingMore(true);
+      const requestId = ++requestIdRef.current;
 
       try {
         const response = await postService.getFeed({ type: 'reels', cursor: nextCursor, limit: 8 });
         const incoming = Array.isArray(response?.data) ? response.data : [];
         const normalized = incoming.map(normalizeReel);
-        setReels((prev) => (replace ? normalized : [...prev, ...normalized]));
-        setCursor(response?.nextCursor || null);
-        setHasMore(Boolean(response?.hasMore));
+        if (requestId !== requestIdRef.current) return;
+        setReels((prev) => {
+          const byId = new Map((replace ? [] : prev).map((item) => [String(item._id || item.id), item]));
+          normalized.forEach((item) => {
+            byId.set(String(item._id || item.id), item);
+          });
+          return Array.from(byId.values());
+        });
+        const next = response?.nextCursor || null;
+        const more = Boolean(response?.hasMore);
+        cursorRef.current = next;
+        hasMoreRef.current = more;
+        setHasMore(more);
       } catch (err) {
         console.error('Failed to load reels:', err);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
         setIsFetchingMore(false);
       }
     },
-    [hasMore, normalizeReel]
+    [normalizeReel]
   );
 
   useEffect(() => {
     setLoading(true);
-    setReels([]);
-    setCursor(null);
+    requestIdRef.current += 1;
     setHasMore(true);
+    cursorRef.current = null;
+    hasMoreRef.current = true;
     loadReels({ replace: true });
-  }, [loadReels]);
+  }, [loadReels, currentUserId]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && hasMore && !isFetchingMore) {
-            loadReels({ nextCursor: cursor });
+            loadReels({ nextCursor: cursorRef.current });
           }
         });
       },
@@ -97,7 +118,7 @@ export default function Reels() {
     if (sentinelRef.current) observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [cursor, hasMore, isFetchingMore, loadReels]);
+  }, [hasMore, isFetchingMore, loadReels]);
 
   useEffect(() => {
     const handlePostCreated = (payload) => {
@@ -137,6 +158,19 @@ export default function Reels() {
       setReels((prev) => prev.filter((item) => item._id !== postId && item.id !== postId));
     };
 
+    const handlePostUpdated = (payload) => {
+      const incoming = payload?.post || payload;
+      const postId = incoming?._id || incoming?.id;
+      if (!postId) return;
+      setReels((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? normalizeReel({ ...item, ...incoming })
+            : item
+        )
+      );
+    };
+
     const handlePostSaved = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
@@ -162,15 +196,19 @@ export default function Reels() {
     };
 
     socket.on('post:created', handlePostCreated);
+    socket.on('post:updated', handlePostUpdated);
     socket.on('post:liked', handlePostLiked);
     socket.on('postDeleted', handlePostDeleted);
+    socket.on('post:deleted', handlePostDeleted);
     socket.on('postSaved', handlePostSaved);
     socket.on('post:visibility', handleVisibility);
 
     return () => {
       socket.off('post:created', handlePostCreated);
+      socket.off('post:updated', handlePostUpdated);
       socket.off('post:liked', handlePostLiked);
       socket.off('postDeleted', handlePostDeleted);
+      socket.off('post:deleted', handlePostDeleted);
       socket.off('postSaved', handlePostSaved);
       socket.off('post:visibility', handleVisibility);
     };

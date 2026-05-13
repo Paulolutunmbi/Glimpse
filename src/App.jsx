@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import ProfileSetup from './pages/ProfileSetup';
 import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
@@ -69,6 +70,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/u/:username" element={<PublicProfile />} />
         <Route
           path="/profile-setup"
           element={

@@ -1,15 +1,76 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import { adminService } from '../services/apiService';
 import { socket } from '../socket';
 import StatusMessage from '../components/StatusMessage';
+import Avatar from '../components/Avatar';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
 
+const toDateLabel = (value) => {
+  if (!value) return 'N/A';
+  return new Date(value).toLocaleString();
+};
+
+const MetricCard = ({ title, value, subtitle, tone = 'default' }) => {
+  const toneClass =
+    tone === 'danger'
+      ? 'from-red-50 to-rose-50 border-red-100'
+      : tone === 'accent'
+      ? 'from-amber-50 to-orange-50 border-amber-100'
+      : 'from-sky-50 to-cyan-50 border-sky-100';
+
+  return (
+    <article className={`rounded-2xl border bg-gradient-to-br p-4 shadow-sm ${toneClass}`}>
+      <p className="text-xs uppercase tracking-[0.12em] text-on-surface-variant">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-on-surface">{value}</p>
+      {subtitle ? <p className="mt-1 text-xs text-on-surface-variant">{subtitle}</p> : null}
+    </article>
+  );
+};
+
+const BarChart = ({ title, data, color = '#0ea5e9', loading = false }) => {
+  const max = useMemo(() => {
+    const values = (data || []).map((item) => Number(item.count) || 0);
+    return Math.max(1, ...values);
+  }, [data]);
+
+  return (
+    <section className="rounded-2xl border border-outline-variant/30 bg-white p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-on-surface">{title}</h3>
+      {loading ? (
+        <div className="mt-4 h-44 animate-pulse rounded-xl bg-surface-container" />
+      ) : (
+        <div className="mt-4 h-52 overflow-x-auto">
+          <div className="flex h-full min-w-[560px] items-end gap-2">
+            {(data || []).map((item) => {
+              const value = Number(item.count) || 0;
+              const heightPct = Math.max(6, Math.round((value / max) * 100));
+              return (
+                <div key={item.date} className="flex flex-1 min-w-[30px] flex-col items-center gap-2">
+                  <div className="text-[10px] text-on-surface-variant">{value}</div>
+                  <div className="flex h-36 w-full items-end">
+                    <div
+                      className="w-full rounded-t-md transition-all duration-300"
+                      style={{ height: `${heightPct}%`, backgroundColor: color }}
+                      title={`${item.date}: ${value}`}
+                    />
+                  </div>
+                  <div className="w-full truncate text-center text-[10px] text-on-surface-variant">{item.date.slice(5)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
+
 const Admin = () => {
   const navigate = useNavigate();
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -20,15 +81,17 @@ const Admin = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
 
   useEffect(() => {
     if (!isAdmin) {
       navigate('/', { replace: true });
-      return;
     }
   }, [isAdmin, navigate]);
 
@@ -50,9 +113,27 @@ const Admin = () => {
     []
   );
 
+  const loadAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await adminService.getAnalytics({ days: 14 });
+      setAnalytics(response?.data || null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
+    if (!isAdmin) return;
     loadUsers(page, search);
-  }, [page, search, loadUsers]);
+  }, [isAdmin, page, search, loadUsers]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadAnalytics();
+  }, [isAdmin, loadAnalytics]);
 
   const handleSearch = () => {
     if (searchInput !== search) {
@@ -61,14 +142,18 @@ const Admin = () => {
     }
   };
 
+  const withSuccessToast = (message) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
   const banUser = async (userId) => {
     setActionLoading(userId);
     try {
       await adminService.banUser(userId, { reason: 'Manual admin action' });
-      setSuccess('User banned');
       setConfirmAction(null);
-      await loadUsers(page, search);
-      setTimeout(() => setSuccess(null), 3000);
+      withSuccessToast('User banned');
+      await Promise.all([loadUsers(page, search), loadAnalytics()]);
     } catch (err) {
       setError('Failed to ban user');
       console.error(err);
@@ -81,10 +166,9 @@ const Admin = () => {
     setActionLoading(userId);
     try {
       await adminService.unbanUser(userId);
-      setSuccess('User unbanned');
       setConfirmAction(null);
-      await loadUsers(page, search);
-      setTimeout(() => setSuccess(null), 3000);
+      withSuccessToast('User unbanned');
+      await Promise.all([loadUsers(page, search), loadAnalytics()]);
     } catch (err) {
       setError('Failed to unban user');
       console.error(err);
@@ -97,15 +181,30 @@ const Admin = () => {
     setActionLoading(userId);
     try {
       await adminService.deleteUser(userId);
-      setSuccess('User deleted');
       setConfirmAction(null);
-      await loadUsers(page, search);
-      setTimeout(() => setSuccess(null), 3000);
+      setSelectedUser(null);
+      withSuccessToast('User deleted');
+      await Promise.all([loadUsers(page, search), loadAnalytics()]);
     } catch (err) {
       setError('Failed to delete user');
       console.error(err);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const openUserDetails = async (rowUser) => {
+    setSelectedUser(rowUser);
+    setDetailsLoading(true);
+    try {
+      const response = await adminService.getUser(rowUser.id);
+      if (response?.data) {
+        setSelectedUser(response.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -123,36 +222,48 @@ const Admin = () => {
       const updated = payload?.user;
       if (!updated) return;
       setUsers((prev) =>
-        prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+        prev.map((item) => (String(item.id) === String(updated.id) ? { ...item, ...updated } : item))
+      );
+      setSelectedUser((prev) =>
+        prev && String(prev.id) === String(updated.id) ? { ...prev, ...updated } : prev
       );
     };
 
     const handleUserDeleted = (payload) => {
       const userId = payload?.userId;
       if (!userId) return;
-      setUsers((prev) => prev.filter((item) => item.id !== userId));
+      setUsers((prev) => prev.filter((item) => String(item.id) !== String(userId)));
+      setSelectedUser((prev) => (prev && String(prev.id) === String(userId) ? null : prev));
+    };
+
+    const handleAnalyticsUpdated = () => {
+      loadAnalytics();
     };
 
     socket.on('admin:alert', handleAdminAlert);
     socket.on('admin:userUpdated', handleUserUpdated);
     socket.on('admin:userDeleted', handleUserDeleted);
+    socket.on('admin:analyticsUpdated', handleAnalyticsUpdated);
 
     return () => {
       socket.off('admin:alert', handleAdminAlert);
       socket.off('admin:userUpdated', handleUserUpdated);
       socket.off('admin:userDeleted', handleUserDeleted);
+      socket.off('admin:analyticsUpdated', handleAnalyticsUpdated);
     };
-  }, []);
+  }, [loadAnalytics]);
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
+
+  const totals = analytics?.totals || {};
+  const usersJoined = analytics?.series?.usersJoined || [];
+  const activePosters = analytics?.series?.activePosters || [];
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 font-['Plus_Jakarta_Sans'] text-[#FF5A5F]">
-          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+    <div className="min-h-screen bg-background text-on-background pt-16 pb-20 md:pb-8">
+      <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+          <h1 className="text-lg font-semibold text-[#FF5A5F] md:text-xl">Admin Dashboard</h1>
           <button
             className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
             type="button"
@@ -164,59 +275,45 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="mx-auto mt-xl max-w-[1200px] px-margin_mobile md:px-margin_desktop">
-        {error && (
-          <div className="mb-md">
-            <StatusMessage tone="error">{error}</StatusMessage>
-          </div>
-        )}
-        {success && (
-          <div className="mb-md">
-            <StatusMessage tone="success">{success}</StatusMessage>
-          </div>
-        )}
-
-        {alerts.map((alert) => (
-          <div key={alert._id} className="mb-md">
-            <StatusMessage tone="info">{alert.preview}</StatusMessage>
+      <main className="mx-auto mt-4 max-w-[1200px] px-4 md:px-6">
+        {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+        {success ? <StatusMessage tone="success">{success}</StatusMessage> : null}
+        {alerts.map((alert, index) => (
+          <div key={alert._id || alert.createdAt || `${alert.preview || 'alert'}-${index}`} className="mt-2">
+            <StatusMessage tone="info">{alert.preview || 'Admin alert received.'}</StatusMessage>
           </div>
         ))}
 
-        {confirmAction && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="rounded-xl bg-white p-6 text-center shadow-xl">
-              <h3 className="mb-2 font-h3 text-h3 text-on-surface">Confirm Action</h3>
-              <p className="mb-6 text-on-surface-variant">{confirmAction.message}</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  className="rounded-lg border border-outline-variant bg-surface px-4 py-2 font-label-md text-label-md text-on-surface transition-all active:scale-95"
-                  type="button"
-                  onClick={() => setConfirmAction(null)}
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-lg border-b-2 border-error/20 bg-error-container px-4 py-2 font-label-md text-label-md text-on-error transition-all active:scale-95 disabled:opacity-50"
-                  type="button"
-                  onClick={confirmAction.onConfirm}
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Processing...' : 'Confirm'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <section className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <MetricCard title="Total Users" value={totals.totalUsers ?? '-'} />
+          <MetricCard title="Total Posts" value={totals.totalPosts ?? '-'} />
+          <MetricCard title="Total Reels" value={totals.totalReels ?? '-'} tone="accent" />
+          <MetricCard title="DAU" value={totals.dailyActiveUsers ?? '-'} subtitle="Active sessions today" />
+          <MetricCard title="Banned Users" value={totals.bannedUsers ?? '-'} tone="danger" />
+          <MetricCard title="Page" value={pagination?.page ?? page} subtitle={`of ${pagination?.pages || 1}`} />
+        </section>
 
-        <div className="mb-xl">
-          <h2 className="mb-md font-h2 text-h2 text-on-surface">Users</h2>
+        <section className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <BarChart
+            title="Users Joined Over Time"
+            data={usersJoined}
+            loading={analyticsLoading}
+            color="#0ea5e9"
+          />
+          <BarChart
+            title="Active Posters Over Time"
+            data={activePosters}
+            loading={analyticsLoading}
+            color="#f97316"
+          />
+        </section>
 
-          <div className="mb-lg flex flex-col gap-md md:flex-row md:items-end">
+        <section className="mt-6">
+          <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end">
             <label className="flex-1">
-              <span className="font-label-md text-label-md text-on-surface">Search users</span>
+              <span className="text-sm font-medium text-on-surface">Search users</span>
               <input
-                className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2 text-body-sm text-on-surface outline-none transition-all placeholder:text-secondary focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+                className="mt-1 w-full rounded-lg border border-outline-variant bg-surface px-4 py-2 text-body-sm text-on-surface outline-none transition-all placeholder:text-secondary focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
                 placeholder="Name, username, or email..."
                 type="text"
                 value={searchInput}
@@ -224,7 +321,7 @@ const Admin = () => {
               />
             </label>
             <button
-              className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95 disabled:opacity-50"
+              className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-5 py-2 font-medium text-on-primary shadow-sm transition-all active:scale-95 disabled:opacity-50"
               type="button"
               onClick={handleSearch}
               disabled={loading}
@@ -232,110 +329,92 @@ const Admin = () => {
               Search
             </button>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="text-center text-on-surface-variant">Loading users...</div>
-        ) : users.length === 0 ? (
-          <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-10 text-center text-on-surface-variant">
-            No users found.
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+          {loading ? (
+            <div className="rounded-2xl border border-outline-variant/30 bg-white p-8 text-center text-on-surface-variant">
+              Loading users...
+            </div>
+          ) : users.length === 0 ? (
+            <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-10 text-center text-on-surface-variant">
+              No users found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-white shadow-sm">
+              <table className="w-full min-w-[760px] border-collapse">
                 <thead>
-                  <tr className="border-b border-outline-variant">
-                    <th className="px-4 py-3 text-left font-label-md text-label-md text-on-surface">
+                  <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left font-label-md text-label-md text-on-surface">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-left font-label-md text-label-md text-on-surface">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Joined
                     </th>
-                    <th className="px-4 py-3 text-left font-label-md text-label-md text-on-surface">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-right font-label-md text-label-md text-on-surface">
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-b border-outline-variant/30 hover:bg-surface-container-lowest transition-colors">
-                      <td className="px-4 py-3 text-body-sm text-on-surface">
-                        {u.fullName || u.name}
-                      </td>
-                      <td className="px-4 py-3 text-body-sm text-on-surface-variant">{u.email}</td>
-                      <td className="px-4 py-3 text-body-sm text-on-surface-variant">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-body-sm">
+                    <tr key={u.id} className="border-b border-outline-variant/20">
+                      <td className="px-4 py-3 text-sm text-on-surface">{u.fullName || u.name || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-on-surface-variant">{u.email}</td>
+                      <td className="px-4 py-3 text-sm text-on-surface-variant">{toDateLabel(u.createdAt)}</td>
+                      <td className="px-4 py-3 text-sm">
                         <span
-                          className={`inline-block px-2 py-1 rounded-full font-label-sm text-label-sm ${
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                             u.isBanned
                               ? 'bg-error-container text-on-error-container'
-                              : 'bg-tertiary-fixed/30 text-on-tertiary-container'
+                              : 'bg-emerald-100 text-emerald-700'
                           }`}
                         >
                           {u.isBanned ? 'Banned' : 'Active'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3">
                         <div className="flex flex-wrap justify-end gap-2">
                           <button
-                            className="rounded px-3 py-1 text-[12px] font-label-md text-label-md text-primary-container transition-all active:scale-95 disabled:opacity-50"
+                            className="rounded-lg border border-outline-variant/30 px-3 py-1 text-xs"
                             type="button"
-                            onClick={() => setSelectedUser(u)}
-                            disabled={actionLoading}
+                            onClick={() => openUserDetails(u)}
                           >
                             Details
                           </button>
                           {u.isBanned ? (
                             <button
-                              className="rounded px-3 py-1 text-[12px] font-label-md text-label-md text-tertiary transition-all active:scale-95 disabled:opacity-50"
+                              className="rounded-lg bg-emerald-100 px-3 py-1 text-xs text-emerald-700"
                               type="button"
+                              disabled={actionLoading === u.id}
                               onClick={() =>
                                 setConfirmAction({
                                   message: `Unban ${u.email}?`,
                                   onConfirm: () => unbanUser(u.id),
                                 })
                               }
-                              disabled={actionLoading === u.id}
                             >
                               {actionLoading === u.id ? '...' : 'Unban'}
                             </button>
                           ) : (
                             <button
-                              className="rounded px-3 py-1 text-[12px] font-label-md text-label-md text-error transition-all active:scale-95 disabled:opacity-50"
+                              className="rounded-lg bg-red-100 px-3 py-1 text-xs text-red-700"
                               type="button"
+                              disabled={actionLoading === u.id}
                               onClick={() =>
                                 setConfirmAction({
                                   message: `Ban ${u.email}?`,
                                   onConfirm: () => banUser(u.id),
                                 })
                               }
-                              disabled={actionLoading === u.id}
                             >
                               {actionLoading === u.id ? '...' : 'Ban'}
                             </button>
                           )}
-                          <button
-                            className="rounded px-3 py-1 text-[12px] font-label-md text-label-md text-error transition-all active:scale-95 disabled:opacity-50"
-                            type="button"
-                            onClick={() =>
-                              setConfirmAction({
-                                message: `Delete ${u.email}? This is permanent.`,
-                                onConfirm: () => deleteUser(u.id),
-                              })
-                            }
-                            disabled={actionLoading === u.id}
-                          >
-                            {actionLoading === u.id ? '...' : 'Delete'}
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -343,99 +422,168 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+          )}
 
-            {pagination && pagination.pages > 1 && (
-              <div className="mt-lg flex justify-center gap-2">
-                <button
-                  className="rounded px-3 py-2 text-body-sm transition-all active:scale-95 disabled:opacity-50"
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}
-                >
-                  Prev
-                </button>
-                <span className="px-3 py-2 text-body-sm text-on-surface-variant">
-                  Page {page} of {pagination.pages}
-                </span>
-                <button
-                  className="rounded px-3 py-2 text-body-sm transition-all active:scale-95 disabled:opacity-50"
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
-                  disabled={page === pagination.pages || loading}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        )}
+          {pagination && pagination.pages > 1 ? (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button
+                className="rounded-lg border border-outline-variant/30 px-3 py-2 text-sm disabled:opacity-50"
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1 || loading}
+              >
+                Prev
+              </button>
+              <span className="text-sm text-on-surface-variant">Page {page} of {pagination.pages}</span>
+              <button
+                className="rounded-lg border border-outline-variant/30 px-3 py-2 text-sm disabled:opacity-50"
+                type="button"
+                onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+                disabled={page === pagination.pages || loading}
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+        </section>
+      </main>
 
-        {selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="rounded-xl bg-white p-6 shadow-xl max-w-md w-full mx-4">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-h3 text-h3 text-on-surface">User Details</h3>
-                <button
-                  className="rounded-full p-2 text-zinc-500 transition-colors hover:bg-zinc-50"
-                  type="button"
-                  onClick={() => setSelectedUser(null)}
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-
-              <div className="space-y-3 text-body-sm text-on-surface-variant">
-                <div>
-                  <span className="font-label-md text-on-surface">Name:</span> {selectedUser.fullName || selectedUser.name}
-                </div>
-                <div>
-                  <span className="font-label-md text-on-surface">Email:</span> {selectedUser.email}
-                </div>
-                <div>
-                  <span className="font-label-md text-on-surface">Username:</span> {selectedUser.username || 'N/A'}
-                </div>
-                <div>
-                  <span className="font-label-md text-on-surface">Joined:</span>{' '}
-                  {new Date(selectedUser.createdAt).toLocaleDateString()}
-                </div>
-                <div>
-                  <span className="font-label-md text-on-surface">Status:</span>{' '}
-                  <span
-                    className={`inline-block px-2 py-1 rounded-full font-label-sm text-label-sm ${
-                      selectedUser.isBanned
-                        ? 'bg-error-container text-on-error-container'
-                        : 'bg-tertiary-fixed/30 text-on-tertiary-container'
-                    }`}
-                  >
-                    {selectedUser.isBanned ? 'Banned' : 'Active'}
-                  </span>
-                </div>
-                {selectedUser.isBanned && selectedUser.banReason && (
-                  <div>
-                    <span className="font-label-md text-on-surface">Ban Reason:</span> {selectedUser.banReason}
-                  </div>
-                )}
-                <div>
-                  <span className="font-label-md text-on-surface">Posts:</span> {selectedUser.stats?.postsCount || 0}
-                </div>
-                <div>
-                  <span className="font-label-md text-on-surface">Followers:</span> {selectedUser.stats?.followersCount || 0}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2 justify-end">
-                <button
-                  className="rounded-lg border border-outline-variant bg-surface px-4 py-2 font-label-md text-label-md text-on-surface transition-all active:scale-95"
-                  type="button"
-                  onClick={() => setSelectedUser(null)}
-                >
-                  Close
-                </button>
-              </div>
+      {confirmAction ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmAction(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-on-surface">Confirm Action</h3>
+            <p className="mt-2 text-sm text-on-surface-variant">{confirmAction.message}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button className="rounded-lg border border-outline-variant/30 px-4 py-2" type="button" onClick={() => setConfirmAction(null)}>
+                Cancel
+              </button>
+              <button className="rounded-lg bg-error px-4 py-2 text-white" type="button" onClick={confirmAction.onConfirm}>
+                Confirm
+              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      ) : null}
+
+      {selectedUser ? (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4" onClick={() => setSelectedUser(null)}>
+          <div
+            className="h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-3xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 py-3 md:px-6">
+              <h3 className="text-lg font-semibold text-on-surface">User Details</h3>
+              <button className="rounded-full p-2 hover:bg-surface-container" type="button" onClick={() => setSelectedUser(null)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-70px)] overflow-y-auto px-4 py-4 md:max-h-[calc(90vh-70px)] md:px-6">
+              {detailsLoading ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-5 w-1/2 rounded bg-surface-container" />
+                  <div className="h-4 w-2/3 rounded bg-surface-container" />
+                  <div className="h-4 w-3/4 rounded bg-surface-container" />
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center gap-3 border-b border-outline-variant/30 pb-4 sm:flex-row sm:items-start">
+                    <Avatar
+                      src={selectedUser.avatar}
+                      name={selectedUser.username || selectedUser.fullName || selectedUser.name}
+                      className="h-20 w-20"
+                    />
+                    <div className="min-w-0 flex-1 text-center sm:text-left">
+                      <p className="text-lg font-semibold text-on-surface">{selectedUser.fullName || selectedUser.name || 'N/A'}</p>
+                      <p className="text-sm text-on-surface-variant">@{selectedUser.username || 'unknown'}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">{selectedUser.email}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant">Joined {toDateLabel(selectedUser.createdAt)}</p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        selectedUser.isBanned
+                          ? 'bg-error-container text-on-error-container'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {selectedUser.isBanned ? 'Banned' : 'Active'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <MetricCard title="Posts" value={selectedUser.stats?.postsCount || 0} />
+                    <MetricCard title="Followers" value={selectedUser.followersCount || 0} />
+                    <MetricCard title="Following" value={selectedUser.followingCount || 0} />
+                    <MetricCard title="Violations" value={selectedUser.violations?.length || 0} tone="danger" />
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4">
+                    <h4 className="text-sm font-semibold text-on-surface">Recent Activity</h4>
+                    <div className="mt-2 space-y-1 text-sm text-on-surface-variant">
+                      <p>Last active: {toDateLabel(selectedUser.recentActivity?.lastActiveAt || selectedUser.lastActiveAt)}</p>
+                      <p>Last login: {toDateLabel(selectedUser.recentActivity?.lastLoginAt)}</p>
+                      <p>Last admin route attempt: {selectedUser.recentActivity?.lastAdminAttemptRoute || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {selectedUser.isBanned && selectedUser.banReason ? (
+                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                      Ban reason: {selectedUser.banReason}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-5 flex flex-wrap justify-end gap-2">
+                    {selectedUser.isBanned ? (
+                      <button
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+                        type="button"
+                        disabled={actionLoading === selectedUser.id}
+                        onClick={() =>
+                          setConfirmAction({
+                            message: `Unban ${selectedUser.email}?`,
+                            onConfirm: () => unbanUser(selectedUser.id),
+                          })
+                        }
+                      >
+                        Unban
+                      </button>
+                    ) : (
+                      <button
+                        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white"
+                        type="button"
+                        disabled={actionLoading === selectedUser.id}
+                        onClick={() =>
+                          setConfirmAction({
+                            message: `Ban ${selectedUser.email}?`,
+                            onConfirm: () => banUser(selectedUser.id),
+                          })
+                        }
+                      >
+                        Ban
+                      </button>
+                    )}
+                    <button
+                      className="rounded-lg bg-error px-4 py-2 text-sm font-medium text-white"
+                      type="button"
+                      disabled={actionLoading === selectedUser.id}
+                      onClick={() =>
+                        setConfirmAction({
+                          message: `Delete ${selectedUser.email}? This is permanent.`,
+                          onConfirm: () => deleteUser(selectedUser.id),
+                        })
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

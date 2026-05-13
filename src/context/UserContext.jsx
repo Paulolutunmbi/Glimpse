@@ -97,17 +97,63 @@ export const UserProvider = ({ children }) => {
       }
     };
 
+    const handlePostUpdated = (payload) => {
+      const incoming = payload?.post || payload;
+      const postId = incoming?._id || incoming?.id;
+      if (!postId) return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          String(item._id || item.id) === String(postId)
+            ? { ...item, ...incoming }
+            : item
+        )
+      );
+      setSavedPosts((prev) =>
+        prev.map((item) =>
+          String(item._id || item.id) === String(postId)
+            ? { ...item, ...incoming }
+            : item
+        )
+      );
+    };
+
+    const handlePostDeleted = (payload) => {
+      const postId = payload?.postId || payload?.id;
+      if (!postId) return;
+      setPosts((prev) => prev.filter((item) => String(item._id || item.id) !== String(postId)));
+      setSavedPosts((prev) => prev.filter((item) => String(item._id || item.id) !== String(postId)));
+    };
+
+    const handlePostCreated = (payload) => {
+      const incoming = payload?.post || payload;
+      if (!incoming) return;
+      if (String(incoming.author) !== String(userId)) return;
+      setPosts((prev) => {
+        const postId = String(incoming._id || incoming.id);
+        if (prev.some((item) => String(item._id || item.id) === postId)) return prev;
+        return [incoming, ...prev];
+      });
+    };
+
     socket.on('notification:created', handleNotificationCreated);
     socket.on('conversation:updated', handleConversationUpdated);
     socket.on('followUpdated', handleFollowUpdated);
+    socket.on('post:updated', handlePostUpdated);
+    socket.on('postDeleted', handlePostDeleted);
+    socket.on('post:deleted', handlePostDeleted);
+    socket.on('post:created', handlePostCreated);
 
     return () => {
       socket.emit('leaveUser', userId);
       socket.off('notification:created', handleNotificationCreated);
       socket.off('conversation:updated', handleConversationUpdated);
       socket.off('followUpdated', handleFollowUpdated);
+      socket.off('post:updated', handlePostUpdated);
+      socket.off('postDeleted', handlePostDeleted);
+      socket.off('post:deleted', handlePostDeleted);
+      socket.off('post:created', handlePostCreated);
     };
-  }, [user, refreshCounts, refreshUser]);
+  }, [user?.id, user?._id, refreshCounts, refreshUser]);
 
   useEffect(() => {
     const unsubscribeAuthLogout = onAuthLogout(() => {

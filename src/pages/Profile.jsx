@@ -9,6 +9,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, profile, stats, relations, posts, savedPosts } = useUser();
   const [activeTab, setActiveTab] = useState('posts');
+  const [shareMessage, setShareMessage] = useState('');
 
   const isAdmin = user?.email === ADMIN_EMAIL;
 
@@ -25,6 +26,37 @@ const Profile = () => {
   const postsCount = stats?.postsCount ?? posts.length;
   const followersCount = stats?.followersCount ?? relations?.followers?.length ?? 0;
   const followingCount = stats?.followingCount ?? relations?.following?.length ?? 0;
+
+  const handleShareProfile = async () => {
+    const profileUrl = `${window.location.origin}/u/${handle}`;
+
+    // Try native Share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Check out ${displayName}'s profile`,
+          text: bio || `Check out ${displayName} on Glimpse`,
+          url: profileUrl,
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+        }
+      }
+    }
+
+    // Fallback to copy to clipboard
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      setShareMessage('Profile link copied!');
+      setTimeout(() => setShareMessage(''), 2000);
+    } catch (err) {
+      console.error('Copy to clipboard failed:', err);
+      setShareMessage('Failed to copy link');
+      setTimeout(() => setShareMessage(''), 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
@@ -79,6 +111,9 @@ const Profile = () => {
               {bio}
             </p>
           ) : null}
+          {shareMessage && (
+            <p className="mb-md text-sm text-green-600">{shareMessage}</p>
+          )}
           <div className="mb-xl flex flex-wrap justify-center gap-md">
             <button
               className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95"
@@ -88,8 +123,9 @@ const Profile = () => {
               Edit Profile
             </button>
             <button
-              className="rounded-lg border border-outline-variant bg-surface px-lg py-sm font-label-md text-label-md text-on-surface transition-all active:scale-95"
+              className="rounded-lg border border-outline-variant bg-surface px-lg py-sm font-label-md text-label-md text-on-surface transition-all active:scale-95 hover:bg-zinc-50"
               type="button"
+              onClick={handleShareProfile}
             >
               Share Profile
             </button>

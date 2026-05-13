@@ -80,12 +80,28 @@ export const postService = {
         const response = await api.post(`/api/posts/${postId}/share`);
         return response.data;
     },
+    repostPost: async (postId, payload = {}) => {
+        const response = await api.post(`/api/posts/${postId}/repost`, payload);
+        return response.data;
+    },
+    undoRepost: async (postId) => {
+        const response = await api.delete(`/api/posts/${postId}/repost`);
+        return response.data;
+    },
     updateVisibility: async (postId, visibility) => {
         const response = await api.patch(`/api/posts/${postId}/visibility`, { visibility });
         return response.data;
     },
     deletePost: async (postId) => {
         const response = await api.delete(`/api/posts/${postId}`);
+        return response.data;
+    },
+    updatePost: async (postId, payload) => {
+        if (payload instanceof FormData) {
+            const response = await api.patch(`/api/posts/${postId}`, payload);
+            return response.data;
+        }
+        const response = await api.patch(`/api/posts/${postId}`, payload);
         return response.data;
     },
 };
@@ -118,8 +134,17 @@ export const userService = {
         const response = await api.get(`/api/user/profile/${userId}`);
         return response.data;
     },
+    getPublicProfileByUsername: async (username) => {
+        const slug = String(username || '').trim().replace(/^@+/, '');
+        const response = await api.get(`/api/users/u/${encodeURIComponent(slug)}`);
+        return response.data;
+    },
     getProfileStats: async (userId) => {
         const response = await api.get(`/api/user/profile/${userId}/stats`);
+        return response.data;
+    },
+    shareProfile: async ({ username, profileUrl } = {}) => {
+        const response = await api.post('/api/user/profile/share', { username, profileUrl });
         return response.data;
     },
     getSavedMoments: async ({ cursor, limit = 10 } = {}) => {
@@ -280,6 +305,12 @@ export const adminService = {
     },
     deleteUser: async (userId) => {
         const response = await api.delete(`/api/admin/users/${userId}`);
+        return response.data;
+    },
+    getAnalytics: async ({ days = 14 } = {}) => {
+        const response = await api.get('/api/admin/analytics', {
+            params: { days },
+        });
         return response.data;
     },
 };
