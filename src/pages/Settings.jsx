@@ -211,27 +211,10 @@ const Settings = () => {
     <div className="min-h-screen bg-background text-on-background font-body-md antialiased">
       <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 font-['Plus_Jakarta_Sans']">
-          <div className="flex items-center gap-3">
-            <img
-              src="/images/glimpse-logo-light-dark.png"
-              alt="Glimpse"
-              className="glimpse-logo-compact object-contain"
-            />
-          </div>
-          <nav className="hidden items-center gap-4 md:flex">
-            <span className="cursor-pointer rounded-md px-3 py-2 font-label-md text-zinc-500 transition-colors duration-200 hover:bg-zinc-50">
-              Feed
-            </span>
-            <span className="cursor-pointer rounded-md px-3 py-2 font-label-md text-zinc-500 transition-colors duration-200 hover:bg-zinc-50">
-              Explore
-            </span>
-            <span className="cursor-pointer rounded-md px-3 py-2 font-label-md font-semibold text-[#FF5A5F] transition-colors duration-200 hover:bg-zinc-50">
-              Profile
-            </span>
-          </nav>
+          <div />
           <div className="flex items-center gap-4">
             <button
-              className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
+              className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50 hover:text-[#FF5A5F]"
               type="button"
               aria-label="Back to profile"
               onClick={() => navigate('/profile')}

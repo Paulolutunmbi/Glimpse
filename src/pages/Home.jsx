@@ -17,7 +17,6 @@ export default function Home() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [feedType, setFeedType] = useState('latest');
   const [discovery, setDiscovery] = useState(null);
-  const [fabOpen, setFabOpen] = useState(false);
   const [discoverOpen, setDiscoverOpen] = useState(false);
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [discoverResults, setDiscoverResults] = useState([]);
@@ -33,6 +32,15 @@ export default function Home() {
     setDiscoverOpen(false);
     setDiscoverQuery('');
     setDiscoverResults([]);
+  }, []);
+
+  const refreshDiscovery = useCallback(async () => {
+    try {
+      const data = await discoveryService.getDiscovery();
+      setDiscovery(data);
+    } catch {
+      return null;
+    }
   }, []);
 
   const canViewPost = useCallback(
@@ -160,18 +168,14 @@ export default function Home() {
 
   useEffect(() => {
     let isMounted = true;
-    discoveryService
-      .getDiscovery()
-      .then((data) => {
-        if (!isMounted) return;
-        setDiscovery(data);
-      })
-      .catch(() => null);
+    refreshDiscovery().then(() => {
+      if (!isMounted) return;
+    });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshDiscovery]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -209,7 +213,7 @@ export default function Home() {
   }, [discoverQuery]);
 
   const handleToggleFollow = async (targetId, isFollowing) => {
-    if (!targetId) return;
+    if (!targetId || String(targetId) === String(currentUserId)) return;
     setFollowOverrides((prev) => ({ ...prev, [targetId]: !isFollowing }));
     try {
       await userService.toggleFollow(targetId, isFollowing);
@@ -219,6 +223,7 @@ export default function Home() {
         return next;
       });
       refreshUser();
+      refreshDiscovery();
     } catch (err) {
       console.error(err);
       setFollowOverrides((prev) => {
@@ -302,6 +307,12 @@ export default function Home() {
 
     socket.on('postSaved', handlePostSaved);
 
+    const handleFollowUpdated = () => {
+      refreshDiscovery();
+    };
+
+    socket.on('followUpdated', handleFollowUpdated);
+
     const handleVisibility = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
@@ -324,8 +335,13 @@ export default function Home() {
       socket.off('post:deleted', handlePostDeleted);
       socket.off('postSaved', handlePostSaved);
       socket.off('post:visibility', handleVisibility);
+      socket.off('followUpdated', handleFollowUpdated);
     };
-  }, [currentUserId, canViewPost, mergeUniquePosts, normalizePost]);
+  }, [currentUserId, canViewPost, mergeUniquePosts, normalizePost, refreshDiscovery]);
+
+  const filteredDiscoverList = discoverList.filter(
+    (person) => String(person?._id || person?.id || '') !== String(currentUserId || '')
+  );
 
   return (
     <>
@@ -433,30 +449,16 @@ export default function Home() {
           </div>
       </div>
 
-      <div className="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3 md:hidden">
-        {fabOpen ? (
-          <div className="flex flex-col items-end gap-2">
-            <button
-              className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-on-surface shadow-lg transition-all duration-200 hover:bg-surface-container"
-              type="button"
-              onClick={() => {
-                setDiscoverOpen(true);
-                setFabOpen(false);
-              }}
-            >
-              Discover People
-            </button>
-          </div>
-        ) : null}
+      <div className="fixed bottom-24 right-5 z-40 md:hidden">
         <button
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-container text-white shadow-[0_10px_25px_rgba(255,90,95,0.35)] transition-transform duration-200 active:scale-95"
+          className={`flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_10px_25px_rgba(255,90,95,0.35)] transition-colors active:scale-95 ${
+            discoverOpen ? 'bg-primary' : 'bg-primary-container hover:bg-primary'
+          }`}
           type="button"
-          onClick={() => setFabOpen((prev) => !prev)}
-          aria-label="Open discover menu"
+          onClick={() => setDiscoverOpen(true)}
+          aria-label="Open discover people modal"
         >
-          <span className="material-symbols-outlined text-[28px]">
-            {fabOpen ? 'close' : 'person_add'}
-          </span>
+          <span className="material-symbols-outlined text-[28px]">person_add</span>
         </button>
       </div>
 
@@ -501,18 +503,19 @@ export default function Home() {
             ) : null}
 
             <div className="mt-4 space-y-3 overflow-y-auto pb-safe">
-              {discoverList.length === 0 ? (
+              {filteredDiscoverList.length === 0 ? (
                 <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4 text-sm text-on-surface-variant">
                   No suggestions yet. Try a different search.
                 </div>
               ) : null}
 
-              {discoverList.map((person) => {
+              {filteredDiscoverList.map((person) => {
                 const id = String(person._id || person.id || '');
                 if (!id) return null;
                 const override = Object.prototype.hasOwnProperty.call(followOverrides, id)
                   ? followOverrides[id]
                   : null;
+                if (String(id) === String(currentUserId || '')) return null;
                 const isFollowing = typeof override === 'boolean'
                   ? override
                   : followingIds.has(id) || person.isFollowing;

@@ -62,6 +62,7 @@ export default function Search() {
   }, [query]);
 
   const handleToggleFollow = async (targetId, isFollowing) => {
+    if (!targetId || String(targetId) === String(user?.id || user?._id || '')) return;
     try {
       setResults((prev) => ({
         ...prev,
@@ -110,6 +111,7 @@ export default function Search() {
                     : following.has(String(item._id || item.id));
                 const userId = String(item._id || item.id);
                 const isActive = activeUserId === userId;
+                const isSelf = String(userId) === String(user?.id || user?._id || '');
                 return (
                   <div
                     key={userId}
@@ -143,11 +145,12 @@ export default function Search() {
                       </div>
                     </div>
                     <button
-                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container hover:text-primary-container active:scale-95"
+                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container hover:text-primary-container active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                       type="button"
                       onClick={() => handleToggleFollow(item._id || item.id, isFollowing)}
+                      disabled={isSelf}
                     >
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {isSelf ? 'You' : isFollowing ? 'Following' : 'Follow'}
                     </button>
                   </div>
                 );

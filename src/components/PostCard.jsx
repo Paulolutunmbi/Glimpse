@@ -19,6 +19,7 @@ function PostCard({ post, currentUser }) {
   const [reposted, setReposted] = useState(Boolean(post?.isReposted));
   const [reposts, setReposts] = useState(post?.repostCount ?? 0);
   const [openComments, setOpenComments] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(post?.commentsCount ?? 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [visibility, setVisibility] = useState(post?.visibility || 'public');
   const [showRepostModal, setShowRepostModal] = useState(false);
@@ -27,11 +28,11 @@ function PostCard({ post, currentUser }) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [repostCaption, setRepostCaption] = useState('');
   const [editForm, setEditForm] = useState({
     caption: post?.caption || '',
     location: post?.location || '',
     visibility: post?.visibility || 'public',
-    hashtags: Array.isArray(post?.hashtags) ? post.hashtags.join(', ') : '',
   });
   const [optimistic, setOptimistic] = useState(null);
   const effectiveCaption = optimistic?.caption ?? caption;
@@ -40,16 +41,42 @@ function PostCard({ post, currentUser }) {
   const currentUserId = currentUser?.id || currentUser?._id || null;
   const isOwner = currentUserId && String(currentUserId) === String(post?.author);
 
+  // Extract hashtags from edit form caption in real-time
+  const extractedHashtags = useMemo(() => {
+    const hashtagRegex = /#[\w]+/g;
+    const matches = editForm.caption.match(hashtagRegex) || [];
+    return matches.map((tag) => tag.replace(/^#+/, ''));
+  }, [editForm.caption]);
+
   useEffect(() => {
     setVisibility(post?.visibility || 'public');
     setEditForm({
       caption: post?.caption || '',
       location: post?.location || '',
       visibility: post?.visibility || 'public',
-      hashtags: Array.isArray(post?.hashtags) ? post.hashtags.join(', ') : '',
     });
     setOptimistic(null);
-  }, [post?.visibility, post?.caption, post?.location, post?.hashtags]);
+  }, [post?.visibility, post?.caption, post?.location]);
+
+  useEffect(() => {
+    setLiked(Boolean(post?.isLiked));
+    setLikes(Array.isArray(post?.likes) ? post.likes.length : (post?.likesCount ?? post?.likes ?? 0));
+    setSaved(Boolean(post?.isSaved));
+    setSaves(post?.saveCount ?? 0);
+    setReposted(Boolean(post?.isReposted));
+    setReposts(post?.repostCount ?? 0);
+    setCommentsCount(post?.commentsCount ?? 0);
+  }, [
+    postId,
+    post?.isLiked,
+    post?.likes,
+    post?.likesCount,
+    post?.isSaved,
+    post?.saveCount,
+    post?.isReposted,
+    post?.repostCount,
+    post?.commentsCount,
+  ]);
 
   useEffect(() => {
     if (!postId) return;
@@ -157,6 +184,29 @@ function PostCard({ post, currentUser }) {
     };
   }, [postId]);
 
+  useEffect(() => {
+    if (!postId) return;
+
+    const handleCommentCreated = (payload) => {
+      const targetId = payload?.postId;
+      if (!targetId || targetId !== postId) return;
+      setCommentsCount((prev) => Math.max(prev + 1, 0));
+    };
+
+    const handleCommentDeleted = (payload) => {
+      const targetId = payload?.postId;
+      if (!targetId || targetId !== postId) return;
+      setCommentsCount((prev) => Math.max(prev - 1, 0));
+    };
+
+    socket.on('comment:created', handleCommentCreated);
+    socket.on('comment:deleted', handleCommentDeleted);
+    return () => {
+      socket.off('comment:created', handleCommentCreated);
+      socket.off('comment:deleted', handleCommentDeleted);
+    };
+  }, [postId]);
+
   const handleLike = async () => {
     if (!postId) return;
 
@@ -226,12 +276,14 @@ function PostCard({ post, currentUser }) {
         setReposts(Math.max(0, reposts - 1));
         await postService.undoRepost(postId);
       } else {
-        // Create repost
+        // Create repost with optional caption
         setShowRepostModal(false);
         setIsRepostingLoading(true);
         setReposted(true);
         setReposts(reposts + 1);
-        await postService.repostPost(postId, {});
+        const repostData = repostCaption.trim() ? { caption: repostCaption.trim() } : {};
+        await postService.repostPost(postId, repostData);
+        setRepostCaption('');
       }
     } catch (err) {
       console.error('Repost failed:', err);
@@ -244,16 +296,18 @@ function PostCard({ post, currentUser }) {
 
   const handleSaveEdit = async () => {
     if (!postId || isSavingEdit) return;
-    const hashtags = editForm.hashtags
-      .split(',')
-      .map((item) => item.trim().replace(/^#+/, ''))
+    
+    // Auto-extract hashtags from caption
+    const hashtagRegex = /#[\w]+/g;
+    const captionHashtags = (editForm.caption.match(hashtagRegex) || [])
+      .map((tag) => tag.replace(/^#+/, ''))
       .filter(Boolean);
-
+    
     const optimisticPayload = {
       caption: editForm.caption,
       location: editForm.location,
       visibility: editForm.visibility,
-      hashtags,
+      hashtags: captionHashtags,
     };
 
     setOptimistic(optimisticPayload);
@@ -293,6 +347,21 @@ function PostCard({ post, currentUser }) {
 
   return (
     <article className="bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
+      {/* Repost Header - Show if this is a reposted post */}
+      {post?.isRepost && post?.reposter ? (
+        <div className="flex items-center gap-2 border-b border-outline-variant/30 bg-surface-dim px-4 py-3">
+          <span className="material-symbols-outlined text-base text-on-surface-variant">
+            repeat
+          </span>
+          <p className="text-xs text-on-surface-variant font-medium">
+            Reshared by{' '}
+            <span className="font-label-sm text-on-surface">
+              {post.reposter.username || 'Someone'}
+            </span>
+          </p>
+        </div>
+      ) : null}
+
       {/* Card Header */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
@@ -443,8 +512,21 @@ function PostCard({ post, currentUser }) {
         <div className="font-label-md text-on-surface text-[13px]">
           {(likes ?? 0).toLocaleString()} {likes === 1 ? 'like' : 'likes'}
         </div>
-        <div className="font-body-sm text-on-surface-variant text-[12px]">
-          {reposts.toLocaleString()} {reposts === 1 ? 'repost' : 'reposts'} • {saves.toLocaleString()} {saves === 1 ? 'save' : 'saves'}
+        <div className="font-body-sm text-on-surface-variant text-[12px] flex flex-wrap gap-3">
+          <button
+            onClick={() => setOpenComments(true)}
+            className="hover:text-on-surface transition-colors cursor-pointer"
+          >
+            {commentsCount} {commentsCount === 1 ? 'comment' : 'comments'}
+          </button>
+          <span>•</span>
+          <span>
+            {reposts.toLocaleString()} {reposts === 1 ? 'repost' : 'reposts'}
+          </span>
+          <span>•</span>
+          <span>
+            {saves.toLocaleString()} {saves === 1 ? 'save' : 'saves'}
+          </span>
         </div>
 
         <div className="font-body-sm text-on-surface">
@@ -460,60 +542,119 @@ function PostCard({ post, currentUser }) {
       </div>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => setEditOpen(false)}>
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-on-surface">Edit Post</h3>
-            <div className="mt-4 space-y-3">
-              <label className="block text-sm text-on-surface-variant">
-                Caption
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4" onClick={() => setEditOpen(false)}>
+          <div 
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl flex flex-col"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 sm:px-6 py-4">
+              <h3 className="font-label-lg text-on-surface">Edit Post</h3>
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+              {/* Caption */}
+              <div className="space-y-2">
+                <label className="block font-label-md text-on-surface">
+                  Caption
+                </label>
                 <textarea
-                  className="mt-1 w-full rounded-xl border border-outline-variant/30 p-3"
-                  rows={3}
+                  className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 resize-none"
+                  rows={5}
+                  placeholder="Write a caption..."
                   value={editForm.caption}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, caption: event.target.value }))}
                 />
-              </label>
-              <label className="block text-sm text-on-surface-variant">
-                Location
+                <p className="text-xs text-on-surface-variant">
+                  {editForm.caption.length} characters
+                </p>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <label htmlFor="edit-location" className="block font-label-md text-on-surface">
+                  Location
+                </label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-outline-variant/30 px-3 py-2"
+                  id="edit-location"
+                  type="text"
+                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50"
+                  placeholder="Add a location..."
                   value={editForm.location}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, location: event.target.value }))}
                 />
-              </label>
-              <label className="block text-sm text-on-surface-variant">
-                Hashtags (comma separated)
-                <input
-                  className="mt-1 w-full rounded-xl border border-outline-variant/30 px-3 py-2"
-                  value={editForm.hashtags}
-                  onChange={(event) => setEditForm((prev) => ({ ...prev, hashtags: event.target.value }))}
-                />
-              </label>
-              <label className="block text-sm text-on-surface-variant">
-                Visibility
+              </div>
+
+              {/* Hashtags Info */}
+              <div className="rounded-lg bg-surface-dim p-3 text-xs text-on-surface-variant">
+                <p className="font-label-sm text-on-surface mb-1">💡 Hashtag Tip</p>
+                <p>Hashtags are now auto-extracted from your caption. Just use # in your caption text!</p>
+              </div>
+
+              {/* Current Hashtags Display */}
+              {extractedHashtags && extractedHashtags.length > 0 ? (
+                <div className="space-y-2">
+                  <label className="block font-label-md text-on-surface">
+                    Detected Hashtags
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {extractedHashtags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-2 rounded-full bg-surface-dim px-3 py-1 text-xs text-on-surface-variant"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Visibility */}
+              <div className="space-y-2">
+                <label htmlFor="edit-visibility" className="block font-label-md text-on-surface">
+                  Visibility
+                </label>
                 <select
-                  className="mt-1 w-full rounded-xl border border-outline-variant/30 px-3 py-2"
+                  id="edit-visibility"
+                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/50 bg-white"
                   value={editForm.visibility}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, visibility: event.target.value }))}
                 >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers</option>
-                  <option value="friends">Friends</option>
-                  <option value="private">Private</option>
+                  <option value="public">🌍 Public - Everyone can see</option>
+                  <option value="followers">👥 Followers - Only your followers</option>
+                  <option value="friends">💫 Friends - Only mutual followers</option>
+                  <option value="private">🔒 Private - Only you</option>
                 </select>
-              </label>
+              </div>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button className="rounded-lg border border-outline-variant/30 px-4 py-2" type="button" onClick={() => setEditOpen(false)}>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 border-t border-outline-variant/30 bg-white px-4 sm:px-6 py-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                disabled={isSavingEdit}
+                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors disabled:opacity-50"
+              >
                 Cancel
               </button>
               <button
-                className="rounded-lg bg-primary-container px-4 py-2 text-white disabled:opacity-60"
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={isSavingEdit}
+                className="rounded-lg bg-primary px-4 py-2 font-label-md text-white hover:bg-primary/90 transition-colors disabled:opacity-60"
               >
-                {isSavingEdit ? 'Saving...' : 'Save'}
+                {isSavingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -521,16 +662,31 @@ function PostCard({ post, currentUser }) {
       ) : null}
 
       {deleteConfirmOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => setDeleteConfirmOpen(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-on-surface">Delete this post?</h3>
-            <p className="mt-2 text-sm text-on-surface-variant">This action cannot be undone.</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button className="rounded-lg border border-outline-variant/30 px-4 py-2" type="button" onClick={() => setDeleteConfirmOpen(false)}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4" onClick={() => setDeleteConfirmOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
+                  <span className="material-symbols-outlined text-error">delete</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-on-surface">Delete this post?</h3>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    This action cannot be undone. The post will be permanently removed.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-outline-variant/30 px-6 py-4 flex justify-end gap-3">
+              <button
+                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors"
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+              >
                 Cancel
               </button>
               <button
-                className="rounded-lg bg-error px-4 py-2 text-white disabled:opacity-60"
+                className="rounded-lg bg-error px-4 py-2 font-label-md text-white hover:bg-error/90 transition-colors disabled:opacity-60"
                 type="button"
                 onClick={handleDeletePost}
                 disabled={isDeleting}
@@ -544,30 +700,104 @@ function PostCard({ post, currentUser }) {
 
       {/* Repost Modal */}
       {showRepostModal && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/50 sm:items-center sm:justify-center">
-          <div className="w-full rounded-t-2xl bg-white p-6 sm:w-96 sm:rounded-2xl">
-            <h2 className="mb-4 text-lg font-semibold">
-              {reposted ? 'Remove Repost?' : 'Repost this post?'}
-            </h2>
-            <p className="mb-6 text-sm text-on-surface-variant">
-              {reposted
-                ? 'This post will be removed from your profile.'
-                : 'This will be added to your profile.'}
-            </p>
-            <div className="flex gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="border-b border-outline-variant/30 p-4 flex items-center justify-between">
+              <h2 className="font-label-lg text-on-surface">
+                {reposted ? 'Remove Repost?' : 'Share this post'}
+              </h2>
               <button
-                className="flex-1 rounded-lg border border-outline-variant bg-surface px-4 py-2 font-semibold transition-colors hover:bg-zinc-100"
+                type="button"
                 onClick={() => setShowRepostModal(false)}
+                className="text-on-surface-variant hover:text-on-surface transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 p-4">
+              {!reposted && (
+                <>
+                  <div>
+                    <label className="block font-label-md text-on-surface mb-2">
+                      Add a caption (optional)
+                    </label>
+                    <textarea
+                      className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 resize-none"
+                      rows={3}
+                      placeholder="Share why you love this post..."
+                      value={repostCaption}
+                      onChange={(e) => setRepostCaption(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Original Post Preview */}
+                  <div className="rounded-lg border border-outline-variant/30 overflow-hidden">
+                    <div className="p-3 bg-surface-dim border-b border-outline-variant/30">
+                      <p className="text-xs font-label-md text-on-surface-variant">Original Post</p>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          className="h-8 w-8"
+                          alt={`${user?.username} avatar`}
+                          src={avatarSrc}
+                          name={user?.username}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-label-sm text-on-surface truncate">
+                            {user?.username}
+                          </p>
+                          <p className="text-xs text-on-surface-variant truncate">
+                            {timestamp}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-on-surface line-clamp-3">
+                        {caption}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {reposted && (
+                <p className="text-sm text-on-surface-variant">
+                  Are you sure you want to remove this repost from your profile? The original post will remain visible in your followers' feeds.
+                </p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-outline-variant/30 p-4 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRepostModal(false);
+                  setRepostCaption('');
+                }}
                 disabled={isRepostingLoading}
+                className="flex-1 rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
-                className="flex-1 rounded-lg bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                type="button"
                 onClick={handleRepost}
                 disabled={isRepostingLoading}
+                className={`flex-1 rounded-lg px-4 py-2 font-label-md text-white transition-colors disabled:opacity-60 ${
+                  reposted
+                    ? 'bg-error hover:bg-error/90'
+                    : 'bg-primary hover:bg-primary/90'
+                }`}
               >
-                {isRepostingLoading ? 'Loading...' : reposted ? 'Remove' : 'Repost'}
+                {isRepostingLoading
+                  ? 'Processing...'
+                  : reposted
+                  ? 'Remove Repost'
+                  : 'Share Post'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { messageService, searchService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
@@ -9,6 +9,34 @@ const formatTime = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const getDayKey = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toDateString();
+};
+
+const formatDayLabel = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const diffDays = Math.round((startOfToday - messageDay) / 86400000);
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays >= 2 && diffDays <= 6) {
+    return date.toLocaleDateString([], { weekday: 'long' });
+  }
+
+  return date.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 };
 
 export default function Messages() {
@@ -248,29 +276,39 @@ export default function Messages() {
           </div>
 
           <div className="mt-4 flex h-[55vh] flex-col gap-3 overflow-y-auto pr-2">
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const isMine = String(message.sender?._id || message.sender) === String(currentUserId);
+              const currentDayKey = getDayKey(message.createdAt);
+              const previousDayKey = index > 0 ? getDayKey(messages[index - 1].createdAt) : null;
               return (
-                <div
-                  key={message._id}
-                  className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
-                >
+                <Fragment key={message._id}>
+                  {currentDayKey && currentDayKey !== previousDayKey ? (
+                    <div className="flex justify-center py-1">
+                      <span className="rounded-full bg-surface-container-lowest px-3 py-1 text-[11px] font-semibold text-on-surface-variant">
+                        {formatDayLabel(message.createdAt)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div
-                    className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
-                      isMine ? 'bg-rose-500 text-white' : 'bg-surface-container-lowest text-on-surface'
-                    }`}
+                    className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p>{message.text}</p>
-                    <span className="mt-1 block text-[10px] opacity-70">{formatTime(message.createdAt)}</span>
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
+                        isMine ? 'bg-rose-500 text-white' : 'bg-surface-container-lowest text-on-surface'
+                      }`}
+                    >
+                      <p>{message.text}</p>
+                      <span className="mt-1 block text-[10px] opacity-70">{formatTime(message.createdAt)}</span>
+                    </div>
                   </div>
-                </div>
+                </Fragment>
               );
             })}
           </div>
 
           <div className="mt-4 flex items-center gap-2">
             <input
-              className="flex-1 rounded-full border border-outline-variant px-4 py-2 text-sm"
+              className="flex-1 rounded-full border border-outline-variant px-4 py-2 text-sm transition-colors focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/20"
               placeholder="Write a message"
               value={text}
               onChange={(event) => setText(event.target.value)}
@@ -283,7 +321,7 @@ export default function Messages() {
               disabled={!activeConversation}
             />
             <button
-              className="rounded-full bg-primary-container px-4 py-2 text-sm text-white"
+              className="rounded-full bg-primary-container px-4 py-2 text-sm text-white transition-colors hover:bg-primary active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               onClick={handleSend}
               disabled={!activeConversation}

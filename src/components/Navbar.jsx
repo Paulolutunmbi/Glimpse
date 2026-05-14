@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from './Avatar';
 
 export default function Navbar({ currentUser, search, onSearchChange }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { notificationCount, messageCount } = useUser();
   const avatarSrc =
     currentUser?.profile?.avatar ||
@@ -22,8 +23,18 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
               className="glimpse-logo-compact object-contain"
             />
           </div>
-          <button className="text-rose-500 md:hidden" aria-label="Search">
-            <span className="material-symbols-outlined">search</span>
+          <button
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors md:hidden ${
+              location.pathname === '/search'
+                ? 'border-primary-container bg-primary-container text-white'
+                : 'border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container'
+            }`}
+            aria-label="Search"
+            type="button"
+            onClick={() => navigate('/search')}
+          >
+            <span className="material-symbols-outlined text-[20px]">search</span>
+            <span>Search</span>
           </button>
           <label className="relative hidden w-full max-w-md items-center md:flex">
             <span className="material-symbols-outlined absolute left-3 text-secondary">search</span>
@@ -35,14 +46,6 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
               onChange={(event) => onSearchChange?.(event.target.value)}
             />
           </label>
-        </div>
-
-        <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
-          <img
-            src="/images/glimpse-logo-light-dark.png"
-            alt="Glimpse"
-            className="glimpse-logo-compact object-contain"
-          />
         </div>
 
         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 md:gap-4">

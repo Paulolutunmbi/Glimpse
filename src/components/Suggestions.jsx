@@ -1,26 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState, memo, useCallback } from 'react';
 import { userService } from '../services/apiService';
 import Avatar from './Avatar';
 
-export default function Suggestions({ suggestions, discovery, onFollowChange }) {
+function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
   const [followingIds, setFollowingIds] = useState(new Set());
+  const currentUserId = String(currentUser?.id || currentUser?._id || '');
 
-  const handleFollow = async (creatorId) => {
+  useEffect(() => {
+    setFollowingIds(
+      new Set(
+        (suggestions || [])
+          .filter((creator) => creator?.isFollowing || creator?._isFollowing)
+          .map((creator) => String(creator.id || creator._id))
+      )
+    );
+  }, [suggestions]);
+
+  const handleFollow = useCallback(async (creatorId) => {
     if (!creatorId) return;
 
-    const previous = new Set(followingIds);
-    const next = new Set(followingIds);
-    next.has(creatorId) ? next.delete(creatorId) : next.add(creatorId);
-    setFollowingIds(next);
+    setFollowingIds((previous) => {
+      const next = new Set(previous);
+      next.has(creatorId) ? next.delete(creatorId) : next.add(creatorId);
+      
+      // Async update
+      (async () => {
+        try {
+          const isFollowing = previous.has(creatorId);
+          await userService.toggleFollow(creatorId, isFollowing);
+          onFollowChange?.();
+        } catch {
+          setFollowingIds(previous);
+        }
+      })();
 
-    try {
-      const isFollowing = previous.has(creatorId);
-      await userService.toggleFollow(creatorId, isFollowing);
-      onFollowChange?.();
-    } catch {
-      setFollowingIds(previous);
-    }
-  };
+      return next;
+    });
+  }, [onFollowChange]);
 
   return (
     <aside className="w-full flex-shrink-0 xl:w-80">
@@ -28,9 +44,12 @@ export default function Suggestions({ suggestions, discovery, onFollowChange }) 
         <h2 className="mb-6 font-h3 text-on-surface">Suggested Creators</h2>
         <div className="flex flex-col gap-5">
           {suggestions.map((creator, index) => {
-            const isFollowing = followingIds.has(creator.id) || creator.isFollowing;
+            const creatorId = String(creator.id || creator._id || '');
+            const isSelf = Boolean(creator.isYou) || (currentUserId && creatorId === currentUserId);
+            if (!creatorId || isSelf) return null;
+            const isFollowing = followingIds.has(creatorId) || creator.isFollowing || creator._isFollowing;
             return (
-              <div key={creator.id || creator.username} className="group flex cursor-pointer items-center justify-between">
+              <div key={creatorId} className="group flex cursor-pointer items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar
                     alt={creator.name || creator.username}
@@ -48,8 +67,14 @@ export default function Suggestions({ suggestions, discovery, onFollowChange }) 
                   </div>
                 </div>
                 <button
-                  className="press-in rounded-full bg-surface-container-high px-3 py-1.5 text-[12px] text-on-surface transition-colors hover:bg-secondary-container font-label-sm"
-                  onClick={() => handleFollow(creator.id)}
+                  className={`press-in rounded-full px-3 py-1.5 text-[12px] font-label-sm transition-colors hover:-translate-y-0.5 active:translate-y-0 ${
+                    isFollowing
+                      ? 'border border-outline-variant bg-surface-container-high text-on-surface hover:bg-surface-container'
+                      : 'bg-primary-container text-white hover:bg-primary'
+                  }`}
+                  onClick={() => handleFollow(creatorId)}
+                  type="button"
+                  disabled={isSelf}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
@@ -103,3 +128,5 @@ export default function Suggestions({ suggestions, discovery, onFollowChange }) 
     </aside>
   );
 }
+
+export default memo(Suggestions);

@@ -71,15 +71,6 @@ export default function Sidebar() {
         Create Moment
       </button>
 
-      <button
-        className="press-in flex items-center gap-3 rounded-xl px-4 py-3 text-gray-600 transition-all hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50"
-        type="button"
-        onClick={() => navigate('/settings')}
-      >
-        <span className="material-symbols-outlined">menu</span>
-        More
-      </button>
-
     </nav>
   );
 }

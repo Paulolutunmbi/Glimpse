@@ -449,16 +449,34 @@ const Admin = () => {
       </main>
 
       {confirmAction ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmAction(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setConfirmAction(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-lg md:max-w-sm"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <h3 className="text-lg font-semibold text-on-surface">Confirm Action</h3>
-            <p className="mt-2 text-sm text-on-surface-variant">{confirmAction.message}</p>
+            <p className="mt-2 text-sm text-on-surface-variant break-words">{confirmAction.message}</p>
             <div className="mt-5 flex justify-end gap-2">
-              <button className="rounded-lg border border-outline-variant/30 px-4 py-2" type="button" onClick={() => setConfirmAction(null)}>
+              <button
+                className="rounded-lg border border-outline-variant/30 px-4 py-2"
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                disabled={Boolean(actionLoading)}
+              >
                 Cancel
               </button>
-              <button className="rounded-lg bg-error px-4 py-2 text-white" type="button" onClick={confirmAction.onConfirm}>
-                Confirm
+              <button
+                className="rounded-lg bg-error px-4 py-2 text-white disabled:opacity-60"
+                type="button"
+                onClick={confirmAction.onConfirm}
+                disabled={Boolean(actionLoading)}
+              >
+                {actionLoading ? '...' : 'Confirm'}
               </button>
             </div>
           </div>
@@ -468,11 +486,11 @@ const Admin = () => {
       {selectedUser ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4" onClick={() => setSelectedUser(null)}>
           <div
-            className="h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-3xl"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
+              className="h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-3xl"
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 py-3 md:px-6">
               <h3 className="text-lg font-semibold text-on-surface">User Details</h3>
               <button className="rounded-full p-2 hover:bg-surface-container" type="button" onClick={() => setSelectedUser(null)}>
