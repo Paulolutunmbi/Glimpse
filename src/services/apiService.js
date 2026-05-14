@@ -347,6 +347,53 @@ export const messageService = {
         const response = await api.patch(`/api/messages/${conversationId}/read`);
         return response.data;
     },
+    // Group Chat Methods
+    getGroupChats: async () => {
+        const response = await api.get('/api/messages/groups');
+        return response.data;
+    },
+    createGroupChat: async ({ name, memberIds, image }) => {
+        const response = await api.post('/api/messages/groups', { name, memberIds, image });
+        return response.data;
+    },
+    getGroupChat: async (groupId) => {
+        const response = await api.get(`/api/messages/groups/${groupId}`);
+        return response.data;
+    },
+    getGroupMessages: async (groupId, { cursor, limit = 30 } = {}) => {
+        const response = await api.get(`/api/messages/groups/${groupId}/messages`, {
+            params: { cursor, limit },
+        });
+        return response.data;
+    },
+    sendGroupMessage: async (groupId, { text }) => {
+        const response = await api.post(`/api/messages/groups/${groupId}/messages`, { text });
+        return response.data;
+    },
+    updateGroupChat: async (groupId, { name, image }) => {
+        const response = await api.patch(`/api/messages/groups/${groupId}`, { name, image });
+        return response.data;
+    },
+    addGroupMember: async (groupId, userId) => {
+        const response = await api.post(`/api/messages/groups/${groupId}/members`, { userId });
+        return response.data;
+    },
+    removeGroupMember: async (groupId, userId) => {
+        const response = await api.delete(`/api/messages/groups/${groupId}/members/${userId}`);
+        return response.data;
+    },
+    leaveGroupChat: async (groupId) => {
+        const response = await api.delete(`/api/messages/groups/${groupId}/leave`);
+        return response.data;
+    },
+    promoteToAdmin: async (groupId, userId) => {
+        const response = await api.patch(`/api/messages/groups/${groupId}/members/${userId}/promote`);
+        return response.data;
+    },
+    demoteFromAdmin: async (groupId, userId) => {
+        const response = await api.patch(`/api/messages/groups/${groupId}/members/${userId}/demote`);
+        return response.data;
+    },
 };
 
 export const discoveryService = {

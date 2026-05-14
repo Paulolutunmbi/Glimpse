@@ -16,13 +16,13 @@ export default function Sidebar() {
   };
   return (
     <nav className="fixed left-0 top-0 z-30 hidden h-screen w-72 flex-col gap-6 border-r border-gray-100 bg-white px-6 pb-6 pt-8 text-base font-medium dark:border-gray-800 dark:bg-gray-900 md:flex font-display">
-      <div className="flex items-center gap-3 px-2">
+      <div className="flex items-center gap-3 px-2 pb-2 border-b border-outline-variant/20">
         <img
           src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="glimpse-logo object-contain"
+          className="glimpse-logo object-contain h-8 w-8"
         />
-        <span className="text-lg font-semibold tracking-wide text-on-surface">Glimpse</span>
+        <span className="text-lg font-bold tracking-wide text-on-surface hidden lg:inline">Glimpse</span>
       </div>
 
       <div className="mt-2 flex flex-1 flex-col gap-2">
@@ -31,29 +31,30 @@ export default function Sidebar() {
           return (
             <a
               key={link.label}
-              className={`press-in flex items-center justify-between rounded-xl px-4 py-3 transition-all ${
+              className={`press-in flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-200 ${
                 location.pathname === link.path
-                  ? 'bg-rose-50 font-semibold text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
-                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'
+                  ? 'bg-rose-50 font-semibold text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50 active:scale-95'
               }`}
               href={link.path}
               onClick={(event) => {
                 event.preventDefault();
                 navigate(link.path);
               }}
+              title={link.label}
             >
               <span className="flex items-center gap-3">
                 <span
-                  className={`material-symbols-outlined ${
+                  className={`material-symbols-outlined text-[24px] transition-all ${
                     location.pathname === link.path ? 'material-symbols-filled' : ''
                   }`}
                 >
                   {link.icon}
                 </span>
-                {link.label}
+                <span className="hidden lg:inline">{link.label}</span>
               </span>
               {badge > 0 ? (
-                <span className="min-w-[22px] rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-semibold text-white">
+                <span className="min-w-[22px] rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-bold text-white">
                   {badge > 99 ? '99+' : badge}
                 </span>
               ) : null}
@@ -63,12 +64,12 @@ export default function Sidebar() {
       </div>
 
       <button
-        className="press-in flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 font-label-md font-semibold text-white shadow-[0_4px_14px_rgba(255,90,95,0.25)] transition-colors hover:bg-primary"
+        className="press-in flex items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-3 font-label-md font-bold text-white shadow-[0_4px_14px_rgba(255,90,95,0.25)] transition-all duration-200 hover:bg-primary hover:shadow-[0_6px_20px_rgba(255,90,95,0.35)] active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-container/30 lg:justify-start"
         type="button"
         onClick={() => navigate('/create')}
       >
         <span className="material-symbols-outlined text-[20px]">add</span>
-        Create Moment
+        <span className="hidden lg:inline">Create Moment</span>
       </button>
 
     </nav>

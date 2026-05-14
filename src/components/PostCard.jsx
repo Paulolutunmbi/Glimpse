@@ -382,21 +382,25 @@ function PostCard({ post, currentUser }) {
         </div>
         <div className="relative">
           <button
-            className="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-colors"
+            className="text-on-surface-variant hover:text-on-surface hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-container/30 active:scale-90"
             type="button"
             onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label="Post options"
+            aria-expanded={menuOpen}
           >
             <span className="material-symbols-outlined">more_horiz</span>
           </button>
           {menuOpen && isOwner ? (
-            <div className="absolute right-0 top-10 z-10 w-40 rounded-xl border border-outline-variant/30 bg-white p-2 text-xs shadow-lg">
-              <p className="px-2 pb-2 text-[11px] text-on-surface-variant">Visibility</p>
+            <div className="absolute right-0 top-10 z-10 w-40 rounded-xl border border-outline-variant/30 bg-white dark:bg-gray-900 shadow-lg p-1">
+              <p className="px-3 py-2 text-[11px] font-semibold text-on-surface-variant">Visibility</p>
               {['public', 'followers', 'friends', 'private'].map((option) => (
                 <button
                   key={option}
-                  className={`flex w-full items-center justify-between rounded-lg px-2 py-1 text-left transition ${
-                    visibility === option ? 'bg-surface-container text-on-surface' : 'text-on-surface-variant'
-                  }`}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-all duration-200 ${
+                    visibility === option 
+                      ? 'bg-primary-container/20 text-on-surface font-semibold' 
+                      : 'text-on-surface-variant hover:bg-gray-100 dark:hover:bg-gray-800'
+                  } focus:outline-none focus:ring-2 focus:ring-primary-container/30`}
                   type="button"
                   onClick={async () => {
                     setVisibility(option);
@@ -410,30 +414,32 @@ function PostCard({ post, currentUser }) {
                 >
                   <span className="capitalize">{option}</span>
                   {visibility === option ? (
-                    <span className="material-symbols-outlined text-[16px]">check</span>
+                    <span className="material-symbols-outlined text-base">check_circle</span>
                   ) : null}
                 </button>
               ))}
               <div className="my-2 h-px bg-outline-variant/30" />
               <button
-                className="flex w-full items-center justify-between rounded-lg px-2 py-1 text-left text-on-surface"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-on-surface hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
                 type="button"
                 onClick={() => {
                   setEditOpen(true);
                   setMenuOpen(false);
                 }}
               >
-                Edit Post
+                <span>Edit Post</span>
+                <span className="material-symbols-outlined text-base">edit</span>
               </button>
               <button
-                className="flex w-full items-center justify-between rounded-lg px-2 py-1 text-left text-error"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-error hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-error/30"
                 type="button"
                 onClick={() => {
                   setDeleteConfirmOpen(true);
                   setMenuOpen(false);
                 }}
               >
-                Delete Post
+                <span>Delete Post</span>
+                <span className="material-symbols-outlined text-base">delete</span>
               </button>
             </div>
           ) : null}
@@ -446,62 +452,69 @@ function PostCard({ post, currentUser }) {
       {/* Interactions & Caption */}
       <div className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             {/* Like Button */}
             <button
               onClick={handleLike}
               aria-label={liked ? 'Unlike post' : 'Like post'}
-              className={`${
+              className={`p-2 rounded-full transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-rose-500/30 active:scale-90 ${
                 liked
-                  ? 'text-rose-500'
-                  : 'text-on-surface hover:text-rose-400'
-              } transition-all duration-150 active:scale-90 flex items-center justify-center`}
+                  ? 'text-rose-500 bg-rose-500/10'
+                  : 'text-on-surface hover:text-rose-500 hover:bg-rose-500/5'
+              }`}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[22px]"
                 style={liked ? { fontVariationSettings: "'FILL' 1" } : {}}
               >
                 favorite
               </span>
             </button>
             <button
-              className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center"
+              className="p-2 rounded-full transition-all duration-200 text-on-surface hover:text-on-surface-variant hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-container/30 active:scale-90 flex items-center justify-center"
               onClick={() => setOpenComments(true)}
+              aria-label="View comments"
             >
-              <span className="material-symbols-outlined">chat_bubble</span>
+              <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
             </button>
             <button
-              className={`${
+              className={`p-2 rounded-full transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500/30 active:scale-90 ${
                 reposted
-                  ? 'text-green-600'
-                  : 'text-on-surface hover:text-green-500'
-              } transition-colors flex items-center justify-center`}
+                  ? 'text-green-600 bg-green-600/10'
+                  : 'text-on-surface hover:text-green-600 hover:bg-green-600/5'
+              }`}
               onClick={() => setShowRepostModal(true)}
               type="button"
-              title={reposted ? 'Unrepost' : 'Repost'}
+              aria-label={reposted ? 'Remove repost' : 'Share post'}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-outlined text-[22px]"
                 style={reposted ? { fontVariationSettings: "'FILL' 1" } : {}}
               >
                 repeat
               </span>
             </button>
             <button
-              className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center"
+              className="p-2 rounded-full transition-all duration-200 text-on-surface hover:text-on-surface-variant hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-container/30 active:scale-90 flex items-center justify-center"
               onClick={handleShare}
               type="button"
+              aria-label="Share post"
             >
-              <span className="material-symbols-outlined">send</span>
+              <span className="material-symbols-outlined text-[22px]">send</span>
             </button>
           </div>
           <button
-            className="text-on-surface hover:text-on-surface-variant transition-colors flex items-center justify-center"
+            className={`p-2 rounded-full transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-amber-500/30 active:scale-90 ${
+              saved
+                ? 'text-amber-500 bg-amber-500/10'
+                : 'text-on-surface hover:text-amber-500 hover:bg-amber-500/5'
+            }`}
             onClick={handleSave}
             type="button"
+            aria-label={saved ? 'Remove from saved' : 'Save post'}
           >
             <span
-              className="material-symbols-outlined"
+              className="material-symbols-outlined text-[22px]"
               style={saved ? { fontVariationSettings: "'FILL' 1" } : {}}
             >
               bookmark
@@ -509,32 +522,32 @@ function PostCard({ post, currentUser }) {
           </button>
         </div>
 
-        <div className="font-label-md text-on-surface text-[13px]">
-          {(likes ?? 0).toLocaleString()} {likes === 1 ? 'like' : 'likes'}
+        <div className="font-label-md text-on-surface text-sm">
+          <span className="font-bold">{(likes ?? 0).toLocaleString()}</span> {likes === 1 ? 'like' : 'likes'}
         </div>
-        <div className="font-body-sm text-on-surface-variant text-[12px] flex flex-wrap gap-3">
+        <div className="font-body-sm text-on-surface-variant text-xs sm:text-sm flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={() => setOpenComments(true)}
-            className="hover:text-on-surface transition-colors cursor-pointer"
+            className="hover:text-on-surface transition-colors cursor-pointer font-medium focus:outline-none focus:ring-2 focus:ring-primary-container/30 rounded px-1"
           >
-            {commentsCount} {commentsCount === 1 ? 'comment' : 'comments'}
+            <span className="font-bold">{commentsCount}</span> {commentsCount === 1 ? 'comment' : 'comments'}
           </button>
           <span>•</span>
           <span>
-            {reposts.toLocaleString()} {reposts === 1 ? 'repost' : 'reposts'}
+            <span className="font-bold">{reposts.toLocaleString()}</span> {reposts === 1 ? 'repost' : 'reposts'}
           </span>
           <span>•</span>
           <span>
-            {saves.toLocaleString()} {saves === 1 ? 'save' : 'saves'}
+            <span className="font-bold">{saves.toLocaleString()}</span> {saves === 1 ? 'save' : 'saves'}
           </span>
         </div>
 
         <div className="font-body-sm text-on-surface">
-          <span className="font-label-md mr-1">{user?.username}</span>
+          <span className="font-label-md font-bold mr-1 hover:underline cursor-pointer transition-colors">{user?.username}</span>
           {effectiveCaption}
         </div>
         {Array.isArray(effectiveHashtags) && effectiveHashtags.length > 0 ? (
-          <div className="text-xs text-on-surface-variant">
+          <div className="text-xs text-primary font-medium flex flex-wrap gap-1">
             {effectiveHashtags.map((tag) => `#${String(tag).replace(/^#+/, '')}`).join(' ')}
           </div>
         ) : null}
@@ -542,18 +555,18 @@ function PostCard({ post, currentUser }) {
       </div>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4" onClick={() => setEditOpen(false)}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setEditOpen(false)}>
           <div 
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl flex flex-col"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col"
             onClick={(event) => event.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 sm:px-6 py-4">
-              <h3 className="font-label-lg text-on-surface">Edit Post</h3>
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4">
+              <h3 className="font-semibold text-lg text-on-surface">Edit Post</h3>
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
-                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
                 aria-label="Close"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -564,11 +577,11 @@ function PostCard({ post, currentUser }) {
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
               {/* Caption */}
               <div className="space-y-2">
-                <label className="block font-label-md text-on-surface">
+                <label className="block font-semibold text-on-surface">
                   Caption
                 </label>
                 <textarea
-                  className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 resize-none"
+                  className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all resize-none"
                   rows={5}
                   placeholder="Write a caption..."
                   value={editForm.caption}
@@ -581,13 +594,13 @@ function PostCard({ post, currentUser }) {
 
               {/* Location */}
               <div className="space-y-2">
-                <label htmlFor="edit-location" className="block font-label-md text-on-surface">
+                <label htmlFor="edit-location" className="block font-semibold text-on-surface">
                   Location
                 </label>
                 <input
                   id="edit-location"
                   type="text"
-                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50"
+                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all"
                   placeholder="Add a location..."
                   value={editForm.location}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, location: event.target.value }))}
@@ -595,22 +608,22 @@ function PostCard({ post, currentUser }) {
               </div>
 
               {/* Hashtags Info */}
-              <div className="rounded-lg bg-surface-dim p-3 text-xs text-on-surface-variant">
-                <p className="font-label-sm text-on-surface mb-1">💡 Hashtag Tip</p>
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-900/50 p-3 text-xs text-blue-900 dark:text-blue-100">
+                <p className="font-semibold text-blue-950 dark:text-blue-50 mb-1">💡 Hashtag Tip</p>
                 <p>Hashtags are now auto-extracted from your caption. Just use # in your caption text!</p>
               </div>
 
               {/* Current Hashtags Display */}
               {extractedHashtags && extractedHashtags.length > 0 ? (
                 <div className="space-y-2">
-                  <label className="block font-label-md text-on-surface">
+                  <label className="block font-semibold text-on-surface">
                     Detected Hashtags
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {extractedHashtags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-2 rounded-full bg-surface-dim px-3 py-1 text-xs text-on-surface-variant"
+                        className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                       >
                         #{tag}
                       </span>
@@ -621,12 +634,12 @@ function PostCard({ post, currentUser }) {
 
               {/* Visibility */}
               <div className="space-y-2">
-                <label htmlFor="edit-visibility" className="block font-label-md text-on-surface">
+                <label htmlFor="edit-visibility" className="block font-semibold text-on-surface">
                   Visibility
                 </label>
                 <select
                   id="edit-visibility"
-                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/50 bg-white"
+                  className="w-full rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all bg-white dark:bg-gray-800 cursor-pointer"
                   value={editForm.visibility}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, visibility: event.target.value }))}
                 >
@@ -639,12 +652,12 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 border-t border-outline-variant/30 bg-white px-4 sm:px-6 py-4 flex justify-end gap-3">
+            <div className="sticky bottom-0 border-t border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
                 disabled={isSavingEdit}
-                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors disabled:opacity-50"
+                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-semibold text-on-surface hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-outline-variant/50"
               >
                 Cancel
               </button>
@@ -652,9 +665,16 @@ function PostCard({ post, currentUser }) {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={isSavingEdit}
-                className="rounded-lg bg-primary px-4 py-2 font-label-md text-white hover:bg-primary/90 transition-colors disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2 font-semibold text-white hover:bg-primary/90 transition-all duration-200 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95"
               >
-                {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                {isSavingEdit ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Saving...
+                  </span>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </div>
@@ -662,16 +682,16 @@ function PostCard({ post, currentUser }) {
       ) : null}
 
       {deleteConfirmOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4" onClick={() => setDeleteConfirmOpen(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
             <div className="p-6 space-y-4">
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
-                  <span className="material-symbols-outlined text-error">delete</span>
+                  <span className="material-symbols-outlined text-error text-lg">delete</span>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-on-surface">Delete this post?</h3>
-                  <p className="mt-1 text-sm text-on-surface-variant">
+                  <p className="mt-2 text-sm text-on-surface-variant">
                     This action cannot be undone. The post will be permanently removed.
                   </p>
                 </div>
@@ -679,19 +699,26 @@ function PostCard({ post, currentUser }) {
             </div>
             <div className="border-t border-outline-variant/30 px-6 py-4 flex justify-end gap-3">
               <button
-                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors"
+                className="rounded-lg border border-outline-variant/30 px-4 py-2 font-semibold text-on-surface hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-outline-variant/50"
                 type="button"
                 onClick={() => setDeleteConfirmOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="rounded-lg bg-error px-4 py-2 font-label-md text-white hover:bg-error/90 transition-colors disabled:opacity-60"
+                className="rounded-lg bg-error px-4 py-2 font-semibold text-white hover:bg-error/90 transition-all duration-200 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-error/50 active:scale-95"
                 type="button"
                 onClick={handleDeletePost}
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Deleting...
+                  </span>
+                ) : (
+                  'Delete'
+                )}
               </button>
             </div>
           </div>
@@ -700,32 +727,33 @@ function PostCard({ post, currentUser }) {
 
       {/* Repost Modal */}
       {showRepostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="border-b border-outline-variant/30 p-4 flex items-center justify-between">
-              <h2 className="font-label-lg text-on-surface">
+            <div className="border-b border-outline-variant/30 p-4 sm:p-6 flex items-center justify-between">
+              <h2 className="font-semibold text-lg text-on-surface">
                 {reposted ? 'Remove Repost?' : 'Share this post'}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowRepostModal(false)}
-                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
+                aria-label="Close"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto space-y-4 p-4">
+            <div className="flex-1 overflow-y-auto space-y-4 p-4 sm:p-6">
               {!reposted && (
                 <>
                   <div>
-                    <label className="block font-label-md text-on-surface mb-2">
+                    <label className="block font-semibold text-on-surface mb-2">
                       Add a caption (optional)
                     </label>
                     <textarea
-                      className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 resize-none"
+                      className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all resize-none"
                       rows={3}
                       placeholder="Share why you love this post..."
                       value={repostCaption}
@@ -735,8 +763,8 @@ function PostCard({ post, currentUser }) {
 
                   {/* Original Post Preview */}
                   <div className="rounded-lg border border-outline-variant/30 overflow-hidden">
-                    <div className="p-3 bg-surface-dim border-b border-outline-variant/30">
-                      <p className="text-xs font-label-md text-on-surface-variant">Original Post</p>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 border-b border-outline-variant/30">
+                      <p className="text-xs font-semibold text-on-surface-variant">Original Post</p>
                     </div>
                     <div className="p-3 space-y-2">
                       <div className="flex items-center gap-2">
@@ -747,7 +775,7 @@ function PostCard({ post, currentUser }) {
                           name={user?.username}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-label-sm text-on-surface truncate">
+                          <p className="font-semibold text-on-surface truncate text-sm">
                             {user?.username}
                           </p>
                           <p className="text-xs text-on-surface-variant truncate">
@@ -771,7 +799,7 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-outline-variant/30 p-4 flex gap-3">
+            <div className="border-t border-outline-variant/30 bg-white dark:bg-gray-900 p-4 sm:p-6 flex gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -779,7 +807,7 @@ function PostCard({ post, currentUser }) {
                   setRepostCaption('');
                 }}
                 disabled={isRepostingLoading}
-                className="flex-1 rounded-lg border border-outline-variant/30 px-4 py-2 font-label-md text-on-surface hover:bg-surface-dim transition-colors disabled:opacity-50"
+                className="flex-1 rounded-lg border border-outline-variant/30 px-4 py-2 font-semibold text-on-surface hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-outline-variant/50"
               >
                 Cancel
               </button>
@@ -787,17 +815,22 @@ function PostCard({ post, currentUser }) {
                 type="button"
                 onClick={handleRepost}
                 disabled={isRepostingLoading}
-                className={`flex-1 rounded-lg px-4 py-2 font-label-md text-white transition-colors disabled:opacity-60 ${
+                className={`flex-1 rounded-lg px-4 py-2 font-semibold text-white transition-all duration-200 disabled:opacity-60 focus:outline-none focus:ring-2 active:scale-95 ${
                   reposted
-                    ? 'bg-error hover:bg-error/90'
-                    : 'bg-primary hover:bg-primary/90'
+                    ? 'bg-error hover:bg-error/90 focus:ring-error/50'
+                    : 'bg-primary hover:bg-primary/90 focus:ring-primary/50'
                 }`}
               >
-                {isRepostingLoading
-                  ? 'Processing...'
-                  : reposted
-                  ? 'Remove Repost'
-                  : 'Share Post'}
+                {isRepostingLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Processing...
+                  </span>
+                ) : reposted ? (
+                  'Remove Repost'
+                ) : (
+                  'Share Post'
+                )}
               </button>
             </div>
           </div>

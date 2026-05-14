@@ -15,6 +15,7 @@ import SavedMoments from './pages/SavedMoments';
 import CreateMoment from './pages/CreateMoment';
 import Reels from './pages/Reels';
 import Messages from './pages/Messages';
+import GroupChat from './pages/GroupChat';
 import Search from './pages/Search';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
@@ -100,6 +101,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/saved" element={<SavedMoments />} />
           <Route path="/create" element={<CreateMoment />} />
+          <Route path="/messages/group/:groupId" element={<GroupChat />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

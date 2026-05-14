@@ -87,23 +87,60 @@ export default function Search() {
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} search={query} onSearchChange={setQuery} />
       <main className="mx-auto w-full max-w-6xl px-4 py-6 pb-safe md:px-8">
-        <div className="mb-6 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3">
-          <label className="text-xs text-on-surface-variant">Search users, reels, and moments</label>
-          <input
-            className="mt-2 w-full bg-transparent text-base outline-none"
-            placeholder="Search for people or posts"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
+        <div className="mb-8 sticky top-16 z-20 rounded-2xl border-2 border-outline-variant/30 bg-white dark:bg-gray-900 px-4 py-4 shadow-sm transition-all duration-200 focus-within:border-primary-container focus-within:shadow-md focus-within:ring-2 focus-within:ring-primary-container/30">
+          <label className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Search users, moments & reels</label>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+            <input
+              className="flex-1 bg-transparent text-lg outline-none text-on-surface placeholder-on-surface-variant/60"
+              placeholder="Find creators, moments, #hashtags..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              autoFocus
+            />
+            {query && (
+              <button
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container/30"
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+              >
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {loading ? <p className="text-sm text-on-surface-variant">Searching...</p> : null}
-        {error ? <p className="text-sm text-error">{error}</p> : null}
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-12">
+            <div className="inline-block w-3 h-3 bg-primary-container rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="inline-block w-3 h-3 bg-primary-container rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="inline-block w-3 h-3 bg-primary-container rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <span className="ml-2 text-sm text-on-surface-variant">Searching...</span>
+          </div>
+        ) : null}
+        {error ? (
+          <div className="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container flex items-center gap-2">
+            <span className="material-symbols-outlined">error</span>
+            {error}
+          </div>
+        ) : null}
+
+        {!query && !loading && (
+          <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-8 text-center">
+            <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-4 block">search</span>
+            <p className="text-on-surface-variant font-medium mb-2">Start searching to discover</p>
+            <p className="text-sm text-on-surface-variant">Find creators, moments, or specific #hashtags</p>
+          </div>
+        )}
 
         {results.users.length > 0 ? (
-          <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold text-on-surface">People</h2>
-            <div className="grid gap-3 md:grid-cols-2">
+          <section className="mb-10">
+            <h2 className="mb-4 text-lg font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined">people</span>
+              People ({results.users.length})
+            </h2>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {results.users.map((item) => {
                 const isFollowing =
                   typeof item._isFollowing === 'boolean'
@@ -115,10 +152,10 @@ export default function Search() {
                 return (
                   <div
                     key={userId}
-                    className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors duration-200 focus-within:ring-2 focus-within:ring-primary-container/30 ${
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary-container/30 ${
                       isActive
-                        ? 'border-primary-container/40 bg-surface-container-lowest'
-                        : 'border-outline-variant/30 bg-white hover:bg-surface-container-lowest'
+                        ? 'border-primary-container/40 bg-primary-container/5 shadow-md'
+                        : 'border-outline-variant/30 bg-white dark:bg-gray-800 hover:border-primary-container/20 hover:shadow-sm active:scale-95'
                     }`}
                     role="button"
                     tabIndex={0}
@@ -132,25 +169,32 @@ export default function Search() {
                       }
                     }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Avatar
                         src={item.profile?.avatar || item.profilePicture || item.avatar}
                         name={item.username || item.name}
                         alt={item.username || 'User'}
-                        className="h-10 w-10"
+                        className="h-12 w-12 flex-shrink-0"
                       />
-                      <div>
-                        <p className="text-sm font-semibold text-on-surface">{item.username || item.name}</p>
-                        <p className="text-xs text-on-surface-variant">{item.fullName || item.name}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-on-surface truncate">{item.username || item.name}</p>
+                        <p className="text-xs text-on-surface-variant truncate">{item.fullName || item.name}</p>
                       </div>
                     </div>
                     <button
-                      className="rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:border-primary-container hover:text-primary-container active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 active:scale-95 ${
+                        isSelf
+                          ? 'bg-surface-container text-on-surface-variant cursor-default'
+                          : isFollowing
+                          ? 'border border-primary-container text-primary-container hover:bg-primary-container/10 dark:bg-gray-700'
+                          : 'bg-primary-container text-white hover:bg-primary-container/90 focus:ring-primary-container/30'
+                      }`}
                       type="button"
                       onClick={() => handleToggleFollow(item._id || item.id, isFollowing)}
                       disabled={isSelf}
+                      aria-label={isSelf ? 'Your account' : isFollowing ? 'Unfollow user' : 'Follow user'}
                     >
-                      {isSelf ? 'You' : isFollowing ? 'Following' : 'Follow'}
+                      {isSelf ? '✓ You' : isFollowing ? 'Following' : 'Follow'}
                     </button>
                   </div>
                 );
@@ -161,13 +205,24 @@ export default function Search() {
 
         {results.posts.length > 0 ? (
           <section>
-            <h2 className="mb-3 text-sm font-semibold text-on-surface">Moments</h2>
+            <h2 className="mb-4 text-lg font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined">image</span>
+              Moments ({results.posts.length})
+            </h2>
             <div className="flex flex-col gap-6">
               {results.posts.map((post) => (
                 <PostCard key={post._id || post.id} post={post} currentUser={user} />
               ))}
             </div>
           </section>
+        ) : null}
+
+        {query && !loading && results.users.length === 0 && results.posts.length === 0 ? (
+          <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-8 text-center">
+            <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-4 block">search_off</span>
+            <p className="text-on-surface-variant font-medium">No results found for "{query}"</p>
+            <p className="text-sm text-on-surface-variant mt-2">Try different keywords or #hashtags</p>
+          </div>
         ) : null}
       </main>
     </div>

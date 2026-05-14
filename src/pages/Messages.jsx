@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { messageService, searchService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
@@ -41,6 +42,7 @@ const formatDayLabel = (value) => {
 
 export default function Messages() {
   const { user, refreshCounts } = useUser();
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -75,13 +77,21 @@ export default function Messages() {
     };
 
     socket.on('conversation:updated', handleConversationUpdated);
-    return () => socket.off('conversation:updated', handleConversationUpdated);
+    socket.on('group:updated', handleConversationUpdated);
+    return () => {
+      socket.off('conversation:updated', handleConversationUpdated);
+      socket.off('group:updated', handleConversationUpdated);
+    };
   }, [loadConversations]);
 
   useEffect(() => {
     if (!activeConversation?._id) return;
     const conversationId = activeConversation._id;
-    socket.emit('joinConversation', conversationId);
+    if (activeConversation.isGroup) {
+      socket.emit('joinGroupChat', conversationId);
+    } else {
+      socket.emit('joinConversation', conversationId);
+    }
 
     const loadMessages = async () => {
       try {
@@ -108,7 +118,11 @@ export default function Messages() {
     socket.on('message:created', handleMessageCreated);
 
     return () => {
-      socket.emit('leaveConversation', conversationId);
+      if (activeConversation.isGroup) {
+        socket.emit('leaveGroupChat', conversationId);
+      } else {
+        socket.emit('leaveConversation', conversationId);
+      }
       socket.off('message:created', handleMessageCreated);
     };
   }, [activeConversation, refreshCounts]);
@@ -147,6 +161,10 @@ export default function Messages() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleOpenGroup = (groupId) => {
+    navigate(`/messages/group/${groupId}`);
   };
 
   const handleSend = async () => {
@@ -227,7 +245,8 @@ export default function Messages() {
               </div>
             ) : null}
             {conversations.map((conversation) => {
-              const partner = getOtherParticipant(conversation);
+              const isGroup = Boolean(conversation.isGroup);
+              const partner = isGroup ? conversation : getOtherParticipant(conversation);
               const isActive = activeConversation?._id === conversation._id;
               return (
                 <button
@@ -238,16 +257,19 @@ export default function Messages() {
                       : 'border-outline-variant/30 bg-surface-container-lowest'
                   }`}
                   type="button"
-                  onClick={() => setActiveConversation(conversation)}
+                  onClick={() => {
+                    if (isGroup) handleOpenGroup(conversation._id);
+                    else setActiveConversation(conversation);
+                  }}
                 >
                   <Avatar
                     src={partner?.profile?.avatar || partner?.profilePicture || partner?.avatar}
-                    name={partner?.username || partner?.name}
+                    name={partner?.username || partner?.name || conversation.name}
                     alt={partner?.username || 'User'}
                     className="h-10 w-10"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-on-surface">{partner?.username || 'User'}</p>
+                    <p className="text-sm font-semibold text-on-surface">{isGroup ? conversation.name : partner?.username || 'User'}</p>
                     <p className="text-xs text-on-surface-variant">{conversation.lastMessageText || 'New conversation'}</p>
                   </div>
                   {conversation.unreadCount ? (
