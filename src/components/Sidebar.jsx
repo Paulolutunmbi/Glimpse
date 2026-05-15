@@ -18,11 +18,10 @@ export default function Sidebar() {
     <nav className="fixed left-0 top-0 z-30 hidden h-screen w-72 flex-col gap-6 border-r border-gray-100 bg-white px-6 pb-6 pt-8 text-base font-medium dark:border-gray-800 dark:bg-gray-900 md:flex font-display">
       <div className="flex items-center gap-3 px-2 pb-2 border-b border-outline-variant/20">
         <img
-          src="/images/glimpse-logo-light-dark.png"
+          src="/images/glimpse-icon.png"
           alt="Glimpse"
-          className="glimpse-logo object-contain h-8 w-8"
+          className="object-contain h-8 w-8"
         />
-        <span className="text-lg font-bold tracking-wide text-on-surface hidden lg:inline">Glimpse</span>
       </div>
 
       <div className="mt-2 flex flex-1 flex-col gap-2">
@@ -43,18 +42,18 @@ export default function Sidebar() {
               }}
               title={link.label}
             >
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-3 min-w-0">
                 <span
-                  className={`material-symbols-outlined text-[24px] transition-all ${
+                  className={`material-symbols-outlined text-[24px] transition-all flex-shrink-0 ${
                     location.pathname === link.path ? 'material-symbols-filled' : ''
                   }`}
                 >
                   {link.icon}
                 </span>
-                <span className="hidden lg:inline">{link.label}</span>
+                <span className="hidden lg:inline truncate">{link.label}</span>
               </span>
               {badge > 0 ? (
-                <span className="min-w-[22px] rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-bold text-white">
+                <span className="min-w-[22px] rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-bold text-white flex-shrink-0">
                   {badge > 99 ? '99+' : badge}
                 </span>
               ) : null}
@@ -68,7 +67,7 @@ export default function Sidebar() {
         type="button"
         onClick={() => navigate('/create')}
       >
-        <span className="material-symbols-outlined text-[20px]">add</span>
+        <span className="material-symbols-outlined text-[20px] flex-shrink-0">add</span>
         <span className="hidden lg:inline">Create Moment</span>
       </button>
 

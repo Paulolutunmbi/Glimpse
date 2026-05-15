@@ -5,6 +5,7 @@ import { messageService, searchService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import { socket } from '../socket';
 import Avatar from '../components/Avatar';
+import CreateGroupModal from '../components/CreateGroupModal';
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -50,6 +51,7 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const currentUserId = user?.id || user?._id || null;
 
   const loadConversations = useCallback(async () => {
@@ -204,9 +206,18 @@ export default function Messages() {
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 pb-safe md:flex-row md:px-8">
-        <section className="w-full md:w-72">
-          <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4">
-            <h2 className="mb-3 text-sm font-semibold text-on-surface">Messages</h2>
+        <section className={`w-full md:w-72 flex flex-col h-[calc(100vh-6rem)] ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
+          <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4 flex-shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-on-surface">Messages</h2>
+              <button
+                onClick={() => setShowCreateGroup(true)}
+                className="p-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                title="Create Group Chat"
+              >
+                <span className="material-symbols-outlined text-[18px]">group_add</span>
+              </button>
+            </div>
             <input
               className="w-full rounded-full border border-outline-variant bg-white px-4 py-2 text-xs"
               placeholder="Start a new message"
@@ -238,7 +249,7 @@ export default function Messages() {
             ) : null}
           </div>
 
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-4 flex flex-col gap-2 flex-1 overflow-y-auto min-h-0 pr-1">
             {loading ? (
               <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-4 text-xs">
                 Loading conversations...
@@ -283,8 +294,16 @@ export default function Messages() {
           </div>
         </section>
 
-        <section className="flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4">
-          <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-3">
+        <section className={`flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4 flex flex-col h-[calc(100vh-6rem)] ${!activeConversation ? 'hidden md:flex' : 'flex'}`}>
+          <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-3 flex-shrink-0">
+            {activeConversation && (
+              <button
+                onClick={() => setActiveConversation(null)}
+                className="md:hidden p-2 -ml-2 rounded-full hover:bg-surface-container transition-colors text-on-surface"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </button>
+            )}
             <Avatar
               src={activePartner?.profile?.avatar || activePartner?.profilePicture || activePartner?.avatar}
               name={activePartner?.username || activePartner?.name}
@@ -297,7 +316,7 @@ export default function Messages() {
             </div>
           </div>
 
-          <div className="mt-4 flex h-[55vh] flex-col gap-3 overflow-y-auto pr-2">
+          <div className="mt-4 flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
             {messages.map((message, index) => {
               const isMine = String(message.sender?._id || message.sender) === String(currentUserId);
               const currentDayKey = getDayKey(message.createdAt);
@@ -328,9 +347,9 @@ export default function Messages() {
             })}
           </div>
 
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2 flex-shrink-0">
             <input
-              className="flex-1 rounded-full border border-outline-variant px-4 py-2 text-sm transition-colors focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/20"
+              className="flex-1 rounded-full border-2 border-transparent bg-surface-container px-4 py-2 text-sm transition-all duration-200 focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:bg-white"
               placeholder="Write a message"
               value={text}
               onChange={(event) => setText(event.target.value)}
@@ -343,7 +362,7 @@ export default function Messages() {
               disabled={!activeConversation}
             />
             <button
-              className="rounded-full bg-primary-container px-4 py-2 text-sm text-white transition-colors hover:bg-primary active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-primary-container px-4 py-2 text-sm text-white transition-all duration-200 hover:bg-primary hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
               type="button"
               onClick={handleSend}
               disabled={!activeConversation}
@@ -353,6 +372,16 @@ export default function Messages() {
           </div>
         </section>
       </main>
+
+      {showCreateGroup && (
+        <CreateGroupModal
+          onClose={() => setShowCreateGroup(false)}
+          onGroupCreated={(group) => {
+            setConversations((prev) => [group, ...prev]);
+            handleOpenGroup(group._id);
+          }}
+        />
+      )}
     </div>
   );
 }

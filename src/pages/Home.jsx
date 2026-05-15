@@ -215,6 +215,18 @@ export default function Home() {
   const handleToggleFollow = async (targetId, isFollowing) => {
     if (!targetId || String(targetId) === String(currentUserId)) return;
     setFollowOverrides((prev) => ({ ...prev, [targetId]: !isFollowing }));
+    if (!isFollowing) {
+      setDiscoverResults((prev) => prev.filter((person) => String(person._id || person.id || '') !== String(targetId)));
+      setDiscovery((prev) => {
+        if (!prev?.suggestedCreators) return prev;
+        return {
+          ...prev,
+          suggestedCreators: prev.suggestedCreators.filter(
+            (person) => String(person._id || person.id || '') !== String(targetId)
+          ),
+        };
+      });
+    }
     try {
       await userService.toggleFollow(targetId, isFollowing);
       setFollowOverrides((prev) => {
@@ -222,7 +234,6 @@ export default function Home() {
         delete next[targetId];
         return next;
       });
-      refreshUser();
       refreshDiscovery();
     } catch (err) {
       console.error(err);
@@ -231,6 +242,7 @@ export default function Home() {
         delete next[targetId];
         return next;
       });
+      refreshDiscovery();
     }
   };
 
@@ -444,7 +456,9 @@ export default function Home() {
               currentUser={user}
               suggestions={discovery?.suggestedCreators || []}
               discovery={discovery}
-              onFollowChange={() => loadFeed({ replace: true })}
+              onFollowChange={() => {
+                refreshDiscovery();
+              }}
             />
           </div>
       </div>

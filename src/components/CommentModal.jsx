@@ -104,8 +104,6 @@ const CommentModal = ({
   useEffect(() => {
     if (!isOpen || !postId) return;
 
-    socket.emit("joinPost", postId);
-
     const handleCommentCreated = (payload) => {
       const incoming = payload?.comment || payload;
       if (!incoming) return;
@@ -130,7 +128,6 @@ const CommentModal = ({
     socket.on("comment:deleted", handleCommentDeleted);
 
     return () => {
-      socket.emit("leavePost", postId);
       socket.off("comment:created", handleCommentCreated);
       socket.off("comment:updated", handleCommentUpdated);
       socket.off("comment:deleted", handleCommentDeleted);
@@ -337,14 +334,14 @@ const CommentModal = ({
       onClick={handleClose}
     >
       <div
-        className="bg-white w-full h-[100vh] overflow-y-hidden md:h-[92vh] md:w-[900px] lg:w-[1100px] md:rounded-2xl rounded-none flex flex-col shadow-xl"
+        className="bg-white w-full h-[100vh] overflow-y-hidden md:h-[84vh] md:max-h-[780px] md:w-[min(88vw,860px)] lg:w-[min(80vw,900px)] md:rounded-2xl rounded-none flex flex-col shadow-xl"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
           {/* Left: Image area */}
-          <div className="w-full md:w-1/2 lg:w-2/3 bg-surface-variant flex items-stretch justify-stretch overflow-hidden rounded-t-none md:rounded-l-2xl">
+          <div className="w-full md:w-[58%] bg-surface-variant flex items-stretch justify-stretch overflow-hidden rounded-t-none md:rounded-l-2xl">
             {imageSources[0] ? (
               <img
                 alt="Post"
@@ -359,7 +356,7 @@ const CommentModal = ({
           </div>
 
           {/* Right: Comments panel */}
-          <div className="w-full md:w-1/2 lg:w-1/3 flex flex-col min-h-0">
+          <div className="w-full md:w-[44%] flex flex-col min-h-0">
             <div className="sticky top-0 z-10 bg-white border-b border-surface-variant p-3 flex items-center gap-3">
               <button
                 type="button"
@@ -383,9 +380,9 @@ const CommentModal = ({
                 <button
                   type="button"
                   onClick={() => onToggleLike?.()}
-                  className={`${
-                    isLiked ? "text-primary-container" : "text-on-surface"
-                  } hover:text-primary-container transition-colors duration-200 focus:outline-none flex items-center justify-center`}
+                  className={`px-3 py-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-rose-500/30 active:scale-90 flex items-center justify-center ${
+                    isLiked ? "text-rose-500 bg-rose-500/10 hover:bg-rose-500/20" : "text-on-surface hover:text-rose-500 hover:bg-rose-500/5"
+                  }`}
                   aria-label={isLiked ? "Unlike post" : "Like post"}
                 >
                   <span
@@ -395,7 +392,7 @@ const CommentModal = ({
                     favorite
                   </span>
                 </button>
-                <button className="text-on-surface hover:text-primary-container transition-colors duration-200 focus:outline-none flex items-center justify-center">
+                <button className="px-3 py-2 rounded-full text-on-surface hover:text-primary-container hover:bg-primary-container/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-container/30 active:scale-90 flex items-center justify-center">
                   <span className="material-symbols-outlined text-[24px]">
                     chat_bubble
                   </span>
@@ -412,7 +409,7 @@ const CommentModal = ({
                   key={emoji}
                   type="button"
                   onClick={() => handleComment(emoji)}
-                  className="text-2xl hover:scale-110 transition-transform duration-200 focus:outline-none bg-surface-variant hover:bg-surface-dim rounded-full w-10 h-10 flex items-center justify-center cursor-pointer"
+                  className="text-2xl hover:scale-125 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-primary-container/30 bg-surface-variant hover:bg-primary-container/20 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer active:scale-100"
                   aria-label={`React ${emoji}`}
                 >
                   {emoji}
@@ -534,7 +531,7 @@ const CommentModal = ({
             <div className="sticky bottom-0 bg-white border-t border-surface-variant p-3 space-y-2">
               <div className="relative flex items-center">
                 <input
-                  className="w-full bg-surface-variant border-none rounded-full py-sm pl-md pr-xl font-body-sm text-on-surface placeholder:text-secondary focus:ring-2 focus:ring-primary-container focus:outline-none"
+                  className="w-full bg-surface-variant border-2 border-transparent rounded-full py-sm pl-md pr-xl font-body-sm text-on-surface placeholder:text-secondary focus:ring-2 focus:ring-primary-container focus:outline-none focus:border-primary-container focus:bg-white transition-all duration-200"
                   placeholder="Write a comment... (try @mentions)"
                   type="text"
                   value={text}
@@ -559,10 +556,10 @@ const CommentModal = ({
                   }}
                 />
                 <button
-                  className={`absolute right-sm top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  className={`absolute right-sm top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
                     isActive
-                      ? "text-primary-container hover:bg-surface-dim"
-                      : "text-secondary opacity-50 cursor-not-allowed"
+                      ? "text-primary-container hover:bg-primary-container/10 active:scale-90 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
+                      : "text-secondary opacity-40 cursor-not-allowed"
                   }`}
                   type="button"
                   onClick={handleComment}
@@ -575,7 +572,7 @@ const CommentModal = ({
 
               {/* @Mention Suggestions */}
               {showMentions && mentionQuery && (
-                <div className="bg-surface-dim rounded-lg border border-outline-variant/30 p-1 text-sm max-h-40 overflow-y-auto">
+                <div className="bg-surface-dim rounded-lg border border-outline-variant/30 p-1 text-sm max-h-40 overflow-y-auto shadow-sm">
                   {[
                     { username: 'john_doe', avatar: null },
                     { username: 'jane_smith', avatar: null },

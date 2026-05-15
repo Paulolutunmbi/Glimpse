@@ -29,14 +29,25 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
             <span className="material-symbols-outlined text-base sm:text-[20px]">search</span>
             <span className="hidden sm:inline">Search</span>
           </button>
-          <label className="relative hidden w-full max-w-2xl items-center md:flex flex-1">
-            <span className="material-symbols-outlined absolute left-3 text-secondary text-lg">search</span>
+          <label className="relative hidden w-full max-w-4xl items-center md:flex flex-1">
+            <span className="material-symbols-outlined absolute left-3 text-secondary text-lg flex-shrink-0">search</span>
             <input
-              className="w-full rounded-full border border-outline-variant bg-surface-container py-2 pl-10 pr-4 text-body-sm text-on-surface outline-none transition-all placeholder:text-secondary focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 hover:border-outline focus:shadow-md"
+              className="w-full rounded-full border border-outline-variant bg-surface-container py-2 pl-10 pr-4 text-body-sm text-on-surface outline-none transition-all placeholder:text-secondary focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 hover:border-outline focus:shadow-md active:ring-primary-container/30"
               placeholder="Search moments, tags, creators..."
               type="search"
               value={search || ''}
-              onChange={(event) => onSearchChange?.(event.target.value)}
+              onChange={(event) => {
+                if (onSearchChange) {
+                  onSearchChange(event.target.value);
+                } else {
+                  navigate(`/search`);
+                }
+              }}
+              onFocus={() => {
+                if (location.pathname !== '/search') {
+                  navigate('/search');
+                }
+              }}
             />
           </label>
         </div>
@@ -78,7 +89,8 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
             src={avatarSrc}
             name={currentUser?.username || currentUser?.name}
             alt="User avatar"
-            className="h-8 w-8 border border-surface-container"
+            className="h-8 w-8 border border-surface-container cursor-pointer rounded-full hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/profile')}
           />
         </div>
       </div>

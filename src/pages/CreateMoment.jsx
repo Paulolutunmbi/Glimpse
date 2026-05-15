@@ -45,6 +45,11 @@ export default function CreateMoment() {
     [files]
   );
 
+  const extractedHashtags = useMemo(() => {
+    const hashtagRegex = /#[\w]+/g;
+    return (caption.match(hashtagRegex) || []).map((tag) => tag.replace(/^#+/, ''));
+  }, [caption]);
+
   useEffect(() => {
     return () => {
       previews.forEach((preview) => URL.revokeObjectURL(preview.url));
@@ -144,9 +149,9 @@ export default function CreateMoment() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden bg-background text-on-background font-body-md antialiased">
-      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-full items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:max-w-5xl md:mx-auto">
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-on-background font-body-md antialiased">
+      <header className="flex-shrink-0 sticky top-0 z-40 border-b border-gray-100 bg-white/90 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-full items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex-1 min-w-0">
             <h1 className="font-h3 text-on-surface truncate">Create Moment</h1>
             <p className="text-body-sm text-on-surface-variant">Step {step} of 2</p>
@@ -156,14 +161,14 @@ export default function CreateMoment() {
             type="button"
             onClick={() => navigate(-1)}
           >
-            Back
+            Close
           </button>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col w-full px-4 py-4 sm:px-6 sm:py-6 overflow-y-auto">
-        <form className="flex-1 w-full mx-auto max-w-5xl grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:max-w-5xl" onSubmit={handleSubmit}>
-          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 sm:p-6 shadow-sm w-full">
+      <main className="flex-1 flex flex-col w-full overflow-y-auto">
+        <form className="flex-1 flex flex-col w-full mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6 gap-4 sm:gap-6 grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" onSubmit={handleSubmit} key={`step-${step}`}>
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 sm:p-6 shadow-sm w-full min-h-min lg:col-span-1">
             {step === 1 ? (
               <>
                 <h2 className="mb-4 font-h4 text-on-surface">Select media</h2>
@@ -178,13 +183,13 @@ export default function CreateMoment() {
                 <button
                   className={`mt-2 flex w-full items-center justify-between rounded-xl border px-3 sm:px-4 py-3 text-left text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-container hover:bg-primary-container/10 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-primary-container/30 ${
                     files.length > 0
-                      ? 'border-primary-container bg-primary-container/10 text-on-surface font-semibold'
+                      ? 'border-primary-container bg-primary-container/10 text-on-surface font-semibold shadow-md'
                       : 'border-outline-variant bg-white text-on-surface hover:shadow-md'
                   }`}
                   type="button"
                   onClick={openFilePicker}
                 >
-                  <span className="font-medium text-sm sm:text-base">{files.length > 0 ? '✓ Change files' : '📁 Choose files'}</span>
+                  <span className="font-medium text-sm sm:text-base flex items-center gap-2">{files.length > 0 ? '✓ Change files' : '📁 Choose files'}</span>
                   <span
                     className={`rounded-full px-2 sm:px-3 py-1 text-xs font-semibold transition-all ${
                       files.length > 0
@@ -199,20 +204,20 @@ export default function CreateMoment() {
                 {previews.length > 0 && (
                   <div className="mt-4 grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
                     {previews.map((preview, index) => (
-                      <div key={preview.url} className="relative overflow-hidden rounded-xl group">
+                      <div key={preview.url} className="relative overflow-hidden rounded-xl group aspect-square">
                         {preview.type === 'video' ? (
-                          <video className="h-40 sm:h-48 w-full object-cover" src={preview.url} playsInline />
+                          <video className="h-full w-full object-cover" src={preview.url} playsInline />
                         ) : (
-                          <img className="h-40 sm:h-48 w-full object-cover" src={preview.url} alt={preview.alt} />
+                          <img className="h-full w-full object-cover" src={preview.url} alt={preview.alt} />
                         )}
                         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-1 sm:gap-2 bg-black/70 px-2 sm:px-3 py-2 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button type="button" onClick={() => handleReorder(index, -1)} className="px-2 py-1 rounded bg-black/50 hover:bg-black transition-colors">
+                          <button type="button" onClick={() => handleReorder(index, -1)} className="px-2 py-1 rounded bg-black/50 hover:bg-black transition-colors active:scale-95">
                             ↑
                           </button>
-                          <button type="button" onClick={() => handleReorder(index, 1)} className="px-2 py-1 rounded bg-black/50 hover:bg-black transition-colors">
+                          <button type="button" onClick={() => handleReorder(index, 1)} className="px-2 py-1 rounded bg-black/50 hover:bg-black transition-colors active:scale-95">
                             ↓
                           </button>
-                          <button type="button" onClick={() => handleRemove(index)} className="px-2 py-1 rounded bg-red-600/80 hover:bg-red-700 transition-colors">
+                          <button type="button" onClick={() => handleRemove(index)} className="px-2 py-1 rounded bg-red-600/80 hover:bg-red-700 transition-colors active:scale-95">
                             ✕
                           </button>
                         </div>
@@ -223,16 +228,24 @@ export default function CreateMoment() {
               </>
             ) : (
               <>
-                <h2 className="mb-4 font-h4 text-on-surface">Preview</h2>
-                <div className="max-h-96 overflow-y-auto">
-                  <MediaCarousel media={previews} />
-                </div>
+                <h2 className="mb-4 font-h4 text-on-surface">Media Preview</h2>
+                {previews.length > 0 ? (
+                  <div className="max-h-96 overflow-y-auto rounded-lg border border-outline-variant/20 bg-white p-2">
+                    <MediaCarousel media={previews} />
+                  </div>
+                ) : (
+                  <div className="max-h-96 flex items-center justify-center rounded-lg border border-dashed border-outline-variant/50 bg-surface-container-lowest p-8 text-center">
+                    <div>
+                      <p className="text-sm text-on-surface-variant mb-2">No media selected</p>
+                      <p className="text-xs text-on-surface-variant opacity-70">Your media preview will appear here</p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>
 
-          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 sm:p-6 shadow-sm w-full max-h-[80vh] overflow-y-auto"
-
+          <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 sm:p-6 shadow-sm w-full overflow-y-auto lg:col-span-1 lg:max-h-[80vh]">
             {step === 1 ? (
               <>
                 <h2 className="mb-3 font-h4 text-on-surface">Before you continue</h2>
@@ -274,25 +287,21 @@ export default function CreateMoment() {
                   </div>
 
                   {/* Auto-extracted hashtags display */}
-                  {useMemo(() => {
-                    const hashtagRegex = /#[\w]+/g;
-                    const extracted = (caption.match(hashtagRegex) || []).map((tag) => tag.replace(/^#+/, ''));
-                    return extracted.length > 0 ? (
-                      <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-3 space-y-2">
-                        <p className="text-xs font-semibold text-primary">✨ Auto-detected Hashtags</p>
-                        <div className="flex flex-wrap gap-2">
-                          {extracted.map((tag) => (
-                            <span
-                              key={tag}
-                              className="inline-flex items-center rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
+                  {extractedHashtags.length > 0 ? (
+                    <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-primary">✨ Auto-detected Hashtags</p>
+                      <div className="flex flex-wrap gap-2">
+                        {extractedHashtags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
                       </div>
-                    ) : null;
-                  }, [caption])}
+                    </div>
+                  ) : null}
 
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-on-surface">Tags (comma separated, optional)</label>
@@ -347,16 +356,16 @@ export default function CreateMoment() {
                   </div>
                 )}
 
-                <div className="mt-6 space-y-2 sm:space-y-0 sm:flex items-center gap-3 pb-2">
+                <div className="mt-6 space-y-2 sm:space-y-0 sm:flex items-center gap-3 pb-2 flex-wrap lg:flex-nowrap">
                   <button
-                    className="w-full sm:flex-1 rounded-lg border border-outline-variant px-4 py-3 font-semibold text-on-surface text-sm sm:text-base transition-all duration-200 hover:border-primary-container hover:bg-primary-container/5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
+                    className="flex-1 rounded-lg border border-outline-variant px-4 py-3 font-semibold text-on-surface text-sm sm:text-base transition-all duration-200 hover:border-primary-container hover:bg-primary-container/5 hover:shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
                     type="button"
                     onClick={() => setStep(1)}
                   >
                     ← Back
                   </button>
                   <button
-                    className="w-full sm:flex-1 rounded-lg bg-primary px-4 py-3 font-semibold text-white text-sm sm:text-base transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="flex-1 rounded-lg bg-primary px-4 py-3 font-semibold text-white text-sm sm:text-base transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                     type="submit"
                     disabled={isSubmitting}
                   >

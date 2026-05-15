@@ -1,9 +1,11 @@
-import { useEffect, useState, memo, useCallback } from 'react';
+import { useEffect, useState, memo, useCallback, useMemo } from 'react';
 import { userService } from '../services/apiService';
+import { socket } from '../socket';
 import Avatar from './Avatar';
 
 function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
   const [followingIds, setFollowingIds] = useState(new Set());
+  const [hiddenIds, setHiddenIds] = useState(new Set());
   const currentUserId = String(currentUser?.id || currentUser?._id || '');
 
   useEffect(() => {
@@ -14,22 +16,50 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
           .map((creator) => String(creator.id || creator._id))
       )
     );
+    setHiddenIds(new Set());
   }, [suggestions]);
+
+  useEffect(() => {
+    const handleFollowUpdated = () => {
+      onFollowChange?.();
+    };
+
+    socket.on('followUpdated', handleFollowUpdated);
+    return () => {
+      socket.off('followUpdated', handleFollowUpdated);
+    };
+  }, [onFollowChange]);
+
+  const visibleSuggestions = useMemo(
+    () => (suggestions || []).filter((creator) => !hiddenIds.has(String(creator.id || creator._id || ''))),
+    [suggestions, hiddenIds]
+  );
 
   const handleFollow = useCallback(async (creatorId) => {
     if (!creatorId) return;
 
     setFollowingIds((previous) => {
+      const isCurrentlyFollowing = previous.has(creatorId);
       const next = new Set(previous);
-      next.has(creatorId) ? next.delete(creatorId) : next.add(creatorId);
+      if (isCurrentlyFollowing) {
+        next.delete(creatorId);
+      } else {
+        next.add(creatorId);
+      }
       
       // Async update
       (async () => {
         try {
-          const isFollowing = previous.has(creatorId);
-          await userService.toggleFollow(creatorId, isFollowing);
+          await userService.toggleFollow(creatorId, isCurrentlyFollowing);
+          // Hide creator after following
+          if (!isCurrentlyFollowing) {
+            setHiddenIds((prevHidden) => new Set([...prevHidden, creatorId]));
+          }
+          // Trigger onFollowChange to refresh list
           onFollowChange?.();
-        } catch {
+        } catch (err) {
+          console.error('Follow action failed:', err);
+          // Revert on error
           setFollowingIds(previous);
         }
       })();
@@ -43,13 +73,13 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
       <div className="ambient-card sticky top-24 rounded-[16px] bg-surface-container-lowest p-6">
         <h2 className="mb-6 font-h3 text-on-surface">Suggested Creators</h2>
         <div className="flex flex-col gap-5">
-          {suggestions.map((creator, index) => {
+          {visibleSuggestions.map((creator, index) => {
             const creatorId = String(creator.id || creator._id || '');
             const isSelf = Boolean(creator.isYou) || (currentUserId && creatorId === currentUserId);
             if (!creatorId || isSelf) return null;
             const isFollowing = followingIds.has(creatorId) || creator.isFollowing || creator._isFollowing;
             return (
-              <div key={creatorId} className="group flex cursor-pointer items-center justify-between">
+              <div key={creatorId} className="group flex cursor-pointer items-center justify-between hover:bg-surface-container/50 transition-colors rounded-xl px-2 py-1">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar
                     alt={creator.name || creator.username}
@@ -67,14 +97,15 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
                   </div>
                 </div>
                 <button
-                  className={`press-in rounded-full px-3 py-1.5 text-[12px] font-label-sm transition-colors hover:-translate-y-0.5 active:translate-y-0 ${
+                  className={`press-in rounded-full px-3 py-1.5 text-[12px] font-label-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container/50 ${
                     isFollowing
-                      ? 'border border-outline-variant bg-surface-container-high text-on-surface hover:bg-surface-container'
-                      : 'bg-primary-container text-white hover:bg-primary'
+                      ? 'border border-outline-variant bg-surface-container-high text-on-surface hover:bg-surface-container hover:border-primary-container/50'
+                      : 'bg-primary-container text-white hover:bg-primary hover:shadow-md'
                   }`}
                   onClick={() => handleFollow(creatorId)}
                   type="button"
                   disabled={isSelf}
+                  aria-label={isSelf ? 'Your account' : isFollowing ? 'Unfollow creator' : 'Follow creator'}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
@@ -82,15 +113,15 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
             );
           })}
 
-          {suggestions.length === 0 && (
+          {visibleSuggestions.length === 0 && (
             <div className="flex items-center gap-3 text-secondary">
               <Avatar alt="" className="h-10 w-10" name="G" />
               <span className="text-body-sm">No creators yet</span>
             </div>
           )}
         </div>
-        <a className="mt-6 block text-center text-primary-container hover:underline font-label-sm" href="#creators">
-          View all recommendations
+        <a className="mt-6 block text-center text-primary-container hover:underline font-label-sm transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-container/30 rounded px-2 py-1 hover:text-primary" href="#creators">
+          View all recommendations →
         </a>
 
         {discovery?.trendingHashtags?.length ? (
