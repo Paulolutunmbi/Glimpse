@@ -728,7 +728,7 @@ function PostCard({ post, currentUser }) {
       {/* Repost Modal */}
       {showRepostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[90vh]">
             {/* Header */}
             <div className="border-b border-outline-variant/30 p-4 sm:p-6 flex items-center justify-between">
               <h2 className="font-semibold text-lg text-on-surface">

@@ -136,7 +136,7 @@ export const userService = {
     },
     getPublicProfileByUsername: async (username) => {
         const slug = String(username || '').trim().replace(/^@+/, '');
-        const response = await api.get(`/api/users/u/${encodeURIComponent(slug)}`);
+        const response = await api.get(`/api/user/u/${encodeURIComponent(slug)}`);
         return response.data;
     },
     getProfileStats: async (userId) => {

@@ -59,15 +59,13 @@ export default function Messages() {
       const response = await messageService.getConversations();
       const list = Array.isArray(response?.data) ? response.data : [];
       setConversations(list);
-      if (!activeConversation && list.length > 0) {
-        setActiveConversation(list[0]);
-      }
+      setActiveConversation((current) => current || (list.length > 0 ? list[0] : null));
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [activeConversation]);
+  }, []);
 
   useEffect(() => {
     loadConversations();
@@ -205,8 +203,8 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-background text-on-background font-body-md">
       <Navbar currentUser={user} />
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 pb-safe md:flex-row md:px-8">
-        <section className={`w-full md:w-72 flex flex-col h-[calc(100vh-6rem)] ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] md:flex-row md:px-8 md:pb-safe min-h-[calc(100dvh-4rem)]">
+        <section className={`w-full md:w-72 flex flex-col h-[calc(100dvh-6rem)] min-h-0 ${activeConversation ? 'hidden md:flex' : 'flex'}`}>
           <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-on-surface">Messages</h2>
@@ -294,7 +292,7 @@ export default function Messages() {
           </div>
         </section>
 
-        <section className={`flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4 flex flex-col h-[calc(100vh-6rem)] ${!activeConversation ? 'hidden md:flex' : 'flex'}`}>
+        <section className={`flex-1 rounded-2xl border border-outline-variant/30 bg-white px-4 py-4 flex flex-col h-[calc(100dvh-6rem)] min-h-0 overflow-hidden ${!activeConversation ? 'hidden md:flex' : 'flex'}`}>
           <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-3 flex-shrink-0">
             {activeConversation && (
               <button
@@ -316,7 +314,7 @@ export default function Messages() {
             </div>
           </div>
 
-          <div className="mt-4 flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
+          <div className="mt-4 flex-1 flex flex-col gap-3 overflow-y-auto pr-2 min-h-0">
             {messages.map((message, index) => {
               const isMine = String(message.sender?._id || message.sender) === String(currentUserId);
               const currentDayKey = getDayKey(message.createdAt);
@@ -347,7 +345,7 @@ export default function Messages() {
             })}
           </div>
 
-          <div className="mt-4 flex items-center gap-2 flex-shrink-0">
+          <div className="mt-4 flex items-center gap-2 flex-shrink-0 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
             <input
               className="flex-1 rounded-full border-2 border-transparent bg-surface-container px-4 py-2 text-sm transition-all duration-200 focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:bg-white"
               placeholder="Write a message"

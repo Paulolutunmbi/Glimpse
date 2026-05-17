@@ -330,18 +330,18 @@ const CommentModal = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/60 z-[60] p-0 sm:p-0 md:p-6"
+      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-black/60 p-0 md:items-center md:p-6"
       onClick={handleClose}
     >
       <div
-        className="bg-white w-full h-[100vh] overflow-y-hidden md:h-[84vh] md:max-h-[780px] md:w-[min(88vw,860px)] lg:w-[min(80vw,900px)] md:rounded-2xl rounded-none flex flex-col shadow-xl"
+        className="bg-white w-full h-[100dvh] max-h-[100dvh] overflow-hidden md:h-auto md:max-h-[85vh] md:w-[min(88vw,860px)] lg:w-[min(80vw,900px)] md:rounded-2xl rounded-none flex flex-col shadow-xl"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
           {/* Left: Image area */}
-          <div className="w-full md:w-[58%] bg-surface-variant flex items-stretch justify-stretch overflow-hidden rounded-t-none md:rounded-l-2xl">
+          <div className="w-full md:w-[58%] max-h-56 shrink-0 bg-surface-variant flex items-stretch justify-stretch overflow-hidden rounded-t-none md:max-h-none md:rounded-l-2xl">
             {imageSources[0] ? (
               <img
                 alt="Post"
@@ -356,7 +356,7 @@ const CommentModal = ({
           </div>
 
           {/* Right: Comments panel */}
-          <div className="w-full md:w-[44%] flex flex-col min-h-0">
+          <div className="w-full md:w-[44%] flex flex-col min-h-0 overflow-hidden">
             <div className="sticky top-0 z-10 bg-white border-b border-surface-variant p-3 flex items-center gap-3">
               <button
                 type="button"
@@ -417,7 +417,7 @@ const CommentModal = ({
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4 bg-white" ref={commentsContainerRef} style={{ maxHeight: 'calc(100vh - 180px)' }}>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-4 bg-white" ref={commentsContainerRef}>
               {error ? (
                 <div className="rounded-lg border border-error/30 bg-error-container px-3 py-2 text-sm text-on-error-container">
                   {error}
@@ -528,7 +528,7 @@ const CommentModal = ({
               })}
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-surface-variant p-3 space-y-2">
+            <div className="sticky bottom-0 bg-white border-t border-surface-variant p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] space-y-2">
               <div className="relative flex items-center">
                 <input
                   className="w-full bg-surface-variant border-2 border-transparent rounded-full py-sm pl-md pr-xl font-body-sm text-on-surface placeholder:text-secondary focus:ring-2 focus:ring-primary-container focus:outline-none focus:border-primary-container focus:bg-white transition-all duration-200"

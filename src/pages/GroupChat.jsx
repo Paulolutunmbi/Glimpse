@@ -215,7 +215,7 @@ export default function GroupChat() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md flex flex-col">
+    <div className="min-h-[100dvh] bg-background text-on-background font-body-md flex flex-col">
       <Navbar currentUser={user} />
       
       {/* Group Header */}
@@ -245,7 +245,7 @@ export default function GroupChat() {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
         {Object.entries(groupedMessages).map(([dayKey, dayMessages]) => (
           <Fragment key={dayKey}>
             <div className="flex justify-center py-2">
@@ -299,7 +299,7 @@ export default function GroupChat() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4">
+      <div className="border-t border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <div className="flex gap-2 items-end">
           <input
             type="text"
@@ -328,7 +328,7 @@ export default function GroupChat() {
       {/* Group Info Panel */}
       {showInfo && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center p-4 md:p-0">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-3xl md:rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-t-3xl md:rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Group Info</h2>
               <button
