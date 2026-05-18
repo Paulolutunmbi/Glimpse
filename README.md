@@ -52,9 +52,9 @@ Glimpse is a React-based social content experience for browsing moments, managin
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `VITE_API_URL` | No | `http://localhost:5000` | Base URL for the backend API and socket connection |
+| `VITE_API_URL` | No | `https://glimpse-backend-tin1.onrender.com` | Base URL for the backend API and socket connection |
 
-If `VITE_API_URL` is not set, the app connects to the backend running on `http://localhost:5000`.
+If `VITE_API_URL` is not set, the app connects to the Render backend at `https://glimpse-backend-tin1.onrender.com`.
 
 ## Run Locally
 
@@ -97,3 +97,12 @@ For deployment, publish the `dist/` output to a static host and point `VITE_API_
 - File uploads are sent as `FormData`, so any API changes on the backend must preserve the expected field names.
 - Run `npm run lint` before submitting changes.
 - The app currently uses JavaScript, not TypeScript, and the route guards assume the backend returns `profileCompleted` and `isVerified` flags.
+
+## PWA Update Mechanism (simple explanation)
+
+- **How updates are triggered:** The service worker checks for new files when the browser navigates to the app or when the service worker script itself changes. During a new deployment the server serves new assets (with new filenames/hashes), the browser downloads them and installs the updated service worker.
+- **Why users may not see updates immediately:** A currently active service worker controls open pages until it is replaced. Even if a new service worker is installed, it typically waits to activate until existing tabs are closed, so users may continue seeing the old version until reload or tab close.
+- **How caching affects updates:** The service worker caches static assets (HTML, JS, CSS, images). If the worker serves cached files, the UI shows the cached version. New assets are fetched when the worker updates its cache during the install step.
+- **How to force an update (conceptual):** Use `skipWaiting()` in the new service worker to activate immediately and `clients.claim()` to take control of pages. From the app, you can prompt users to reload when an update is available; calling `window.location.reload()` after the new worker activates ensures they get the newest files.
+
+If you want, I can add a small status banner that notifies users when a new version is available and offers a refresh button.

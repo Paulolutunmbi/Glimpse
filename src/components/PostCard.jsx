@@ -41,6 +41,15 @@ function PostCard({ post, currentUser }) {
   const currentUserId = currentUser?.id || currentUser?._id || null;
   const isOwner = currentUserId && String(currentUserId) === String(post?.author);
 
+  useEffect(() => {
+    if (!showRepostModal) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowRepostModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showRepostModal]);
+
   // Extract hashtags from edit form caption in real-time
   const extractedHashtags = useMemo(() => {
     const hashtagRegex = /#[\w]+/g;
@@ -359,6 +368,14 @@ function PostCard({ post, currentUser }) {
               {post.reposter.username || 'Someone'}
             </span>
           </p>
+        </div>
+      ) : null}
+
+      {/* Reposted indicator when user reposted this post */}
+      {reposted && !post?.isRepost ? (
+        <div className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface-variant bg-surface-dim border-b border-outline-variant/30">
+          <span className="material-symbols-outlined text-base">repeat</span>
+          <span className="font-medium">Reposted</span>
         </div>
       ) : null}
 
@@ -727,8 +744,8 @@ function PostCard({ post, currentUser }) {
 
       {/* Repost Modal */}
       {showRepostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setShowRepostModal(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="border-b border-outline-variant/30 p-4 sm:p-6 flex items-center justify-between">
               <h2 className="font-semibold text-lg text-on-surface">
@@ -843,7 +860,8 @@ function PostCard({ post, currentUser }) {
         onClose={() => setOpenComments(false)}
         liked={liked}
         likes={likes}
-        onToggleLike={handleLike}
+          onToggleLike={handleLike}
+          onCommentCountChange={(delta) => setCommentsCount((prev) => Math.max(0, prev + (Number(delta) || 0)))}
         currentUser={currentUser}
       />
     </article>

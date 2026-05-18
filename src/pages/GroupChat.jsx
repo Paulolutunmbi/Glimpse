@@ -94,7 +94,12 @@ export default function GroupChat() {
     const handleMessageCreated = (payload) => {
       const message = payload?.message || payload;
       if (payload?.groupId && payload.groupId !== groupId) return;
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const incomingId = message?._id || message?.id || message?.clientId;
+        if (!incomingId) return [...prev, message];
+        if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
+        return [...prev, message];
+      });
     };
 
     const handleMessageDeleted = (payload) => {
@@ -138,7 +143,12 @@ export default function GroupChat() {
       const response = await messageService.sendGroupMessage(groupId, { text: trimmed });
       const message = response?.data;
       if (message) {
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => {
+          const incomingId = message?._id || message?.id || message?.clientId;
+          if (!incomingId) return [...prev, message];
+          if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
+          return [...prev, message];
+        });
       }
     } catch (err) {
       console.error(err);

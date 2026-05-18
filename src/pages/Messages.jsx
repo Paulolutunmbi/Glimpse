@@ -111,7 +111,12 @@ export default function Messages() {
       const incoming = payload?.message || payload;
       if (!incoming) return;
       if (payload?.conversationId && payload.conversationId !== conversationId) return;
-      setMessages((prev) => [...prev, incoming]);
+      setMessages((prev) => {
+        const incomingId = incoming?._id || incoming?.id || incoming?.clientId;
+        if (!incomingId) return [...prev, incoming];
+        if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
+        return [...prev, incoming];
+      });
       refreshCounts();
     };
 

@@ -1,8 +1,10 @@
 import { io } from "socket.io-client";
 
-const URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const RENDER_URL = "https://glimpse-backend-tin1.onrender.com";
+const URL = import.meta.env.VITE_API_URL || RENDER_URL;
 
 export const socket = io(URL, {
+	path: "/socket.io",
 	transports: ["websocket", "polling"],
 	reconnection: true,
 	reconnectionAttempts: 5,
@@ -15,6 +17,10 @@ export const setSocketAuth = (token) => {
 	if (token) {
 		if (!socket.connected) socket.connect();
 	} else {
-		socket.disconnect();
+		try {
+			socket.disconnect();
+		} catch (e) {
+			// ignore
+		}
 	}
 };

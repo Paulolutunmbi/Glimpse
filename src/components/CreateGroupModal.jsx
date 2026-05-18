@@ -27,6 +27,20 @@ export default function CreateGroupModal({ onClose, onGroupCreated }) {
     return () => clearTimeout(timeout);
   }, [query]);
 
+  // Prevent background scroll and close on Escape
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
   const toggleUser = (user) => {
     setSelectedUsers((prev) => {
       const isSelected = prev.some((u) => u._id === user._id || u.id === user.id);

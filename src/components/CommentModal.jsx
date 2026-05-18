@@ -11,6 +11,7 @@ const CommentModal = ({
   liked,
   likes,
   onToggleLike,
+  onCommentCountChange,
   currentUser,
 }) => {
   const [comments, setComments] = useState([]);
@@ -19,6 +20,7 @@ const CommentModal = ({
   const [editingText, setEditingText] = useState("");
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [replyToId, setReplyToId] = useState(null);
   const [error, setError] = useState("");
   const [mentionQuery, setMentionQuery] = useState("");
   const [showMentions, setShowMentions] = useState(false);
@@ -195,6 +197,7 @@ const CommentModal = ({
       _id: clientId,
       clientId,
       text: trimmed,
+      parentCommentId: replyToId || null,
       username: currentUser?.username ?? "Guest",
       userId: currentUserId ?? null,
       avatar: currentUser?.avatar ?? null,
@@ -204,12 +207,17 @@ const CommentModal = ({
 
     // Optimistic update - add comment immediately
     upsertComment(optimisticComment);
+    if (typeof onCommentCountChange === 'function') onCommentCountChange(1);
     setText("");
 
     const payload = {
       postId,
       text: trimmed,
     };
+
+    if (replyToId) {
+      payload.parentCommentId = replyToId;
+    }
 
     if (currentUser?.username) {
       payload.username = currentUser.username;
@@ -234,9 +242,11 @@ const CommentModal = ({
 
       // Replace optimistic comment with real one
       upsertComment(resolvedComment);
+      setReplyToId(null);
     } catch {
       // Remove optimistic comment on error
       setComments((prev) => prev.filter((item) => item.clientId !== clientId));
+      if (typeof onCommentCountChange === 'function') onCommentCountChange(-1);
       setError("Failed to post comment. Please try again.");
     }
   };
@@ -428,107 +438,155 @@ const CommentModal = ({
                   No comments yet. Be the first to say something.
                 </p>
               )}
-              {comments.map((c) => {
-                const permissions = resolveCommentPermissions(c);
-                const isOwner = permissions.isOwner;
-                const commentKey = getCommentKey(c);
-                return (
-                  <div key={commentKey} className="flex gap-3">
-                    <Avatar
-                      alt={c.username || "Comment author"}
-                      className="h-8 w-8 shrink-0"
-                      src={
-                        c.avatar ||
-                        currentUser?.profilePicture ||
-                        currentUser?.avatar ||
-                        post?.user?.avatar ||
-                        ''
-                      }
-                      name={c.username || currentUser?.username || post?.user?.username}
-                    />
-                    <div className="flex-1 flex items-start gap-2">
-                      <div className="flex-1 bg-surface-variant rounded-xl p-3 rounded-tl-none">
-                        <span className="font-label-md text-on-surface block mb-1">
-                          {c.username || "Guest"}
-                        </span>
-                        {editingId === commentKey ? (
-                          <input
-                            className="w-full bg-white border border-surface-variant rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary-container"
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleSaveEdit();
-                              }
-                              if (e.key === "Escape") {
-                                e.preventDefault();
-                                handleCancelEdit();
-                              }
-                            }}
-                            autoFocus
-                          />
-                        ) : (
-                          <div className="font-body-sm text-on-surface-variant">
-                            <span>{c.text}</span>
-                            {c?.isEdited ? (
-                              <span className="ml-2 text-[11px] font-medium text-on-surface-variant/80">edited</span>
-                            ) : null}
+              {(() => {
+                const topComments = comments.filter((c) => !c.parentCommentId);
+                return topComments.map((c) => {
+                  const permissions = resolveCommentPermissions(c);
+                  const isOwner = permissions.isOwner;
+                  const commentKey = getCommentKey(c);
+                  const replies = comments
+                    .filter((r) => r.parentCommentId && String(r.parentCommentId) === String(c._id || c.id))
+                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                  return (
+                    <div key={commentKey} className="flex flex-col gap-3">
+                      <div className="flex gap-3">
+                        <Avatar
+                          alt={c.username || "Comment author"}
+                          className="h-8 w-8 shrink-0"
+                          src={
+                            c.avatar ||
+                            currentUser?.profilePicture ||
+                            currentUser?.avatar ||
+                            post?.user?.avatar ||
+                            ''
+                          }
+                          name={c.username || currentUser?.username || post?.user?.username}
+                        />
+                        <div className="flex-1 flex items-start gap-2">
+                          <div className="flex-1 bg-surface-variant rounded-xl p-3 rounded-tl-none">
+                            <span className="font-label-md text-on-surface block mb-1">
+                              {c.username || "Guest"}
+                            </span>
+                            {editingId === commentKey ? (
+                              <input
+                                className="w-full bg-white border border-surface-variant rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary-container"
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleSaveEdit();
+                                  }
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <div className="font-body-sm text-on-surface-variant">
+                                <span>{c.text}</span>
+                                {c?.isEdited ? (
+                                  <span className="ml-2 text-[11px] font-medium text-on-surface-variant/80">edited</span>
+                                ) : null}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <div className="relative flex flex-col items-end gap-2">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                                  isOwner
+                                    ? "text-on-surface hover:bg-surface-variant"
+                                    : "text-on-surface-variant"
+                                }`}
+                                onClick={() => {
+                                  if (!isOwner) return;
+                                  setMenuOpenId((prev) => (prev === commentKey ? null : commentKey));
+                                }}
+                                aria-label="Comment options"
+                                aria-disabled={!isOwner}
+                              >
+                                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="text-xs text-on-surface-variant hover:text-primary-container px-2"
+                                onClick={() => setReplyToId(c._id || c.id || commentKey)}
+                              >
+                                Reply
+                              </button>
+                            </div>
+                            {menuOpenId === commentKey && (
+                              <div className="absolute right-0 mt-2 w-28 rounded-lg border border-surface-variant bg-white shadow-lg overflow-hidden z-10">
+                                {permissions.canEdit ? (
+                                  <button
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-surface-variant"
+                                    onClick={() => handleStartEdit(c)}
+                                  >
+                                    Edit
+                                  </button>
+                                ) : null}
+                                {permissions.canDelete ? (
+                                  <button
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                                    onClick={() => setConfirmDeleteId(commentKey)}
+                                  >
+                                    Delete
+                                  </button>
+                                ) : null}
+                                {!permissions.canEdit && !permissions.canDelete ? (
+                                  <div className="px-3 py-2 text-[11px] text-on-surface-variant">Time window expired</div>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                            isOwner
-                              ? "text-on-surface hover:bg-surface-variant"
-                              : "text-on-surface-variant cursor-default"
-                          }`}
-                          onClick={() => {
-                            if (!isOwner) return;
-                            setMenuOpenId((prev) =>
-                              prev === commentKey ? null : commentKey
+
+                      {/* Replies */}
+                      {replies.length > 0 && (
+                        <div className="pl-12 mt-1 flex flex-col gap-3">
+                          {replies.map((r) => {
+                            const rKey = getCommentKey(r);
+                            return (
+                              <div key={rKey} className="flex gap-3">
+                                <Avatar
+                                  alt={r.username || "Reply author"}
+                                  className="h-7 w-7 shrink-0"
+                                  src={r.avatar || ''}
+                                  name={r.username || 'Guest'}
+                                />
+                                <div className="flex-1 bg-surface-variant rounded-xl p-3">
+                                  <span className="font-label-sm text-on-surface block mb-1">{r.username}</span>
+                                  <div className="font-body-sm text-on-surface-variant">{r.text}</div>
+                                </div>
+                              </div>
                             );
-                          }}
-                          aria-label="Comment options"
-                          aria-disabled={!isOwner}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                        </button>
-                        {menuOpenId === commentKey && (
-                          <div className="absolute right-0 mt-2 w-28 rounded-lg border border-surface-variant bg-white shadow-lg overflow-hidden z-10">
-                            {permissions.canEdit ? (
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-surface-variant"
-                                onClick={() => handleStartEdit(c)}
-                              >
-                                Edit
-                              </button>
-                            ) : null}
-                            {permissions.canDelete ? (
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                                onClick={() => setConfirmDeleteId(commentKey)}
-                              >
-                                Delete
-                              </button>
-                            ) : null}
-                            {!permissions.canEdit && !permissions.canDelete ? (
-                              <div className="px-3 py-2 text-[11px] text-on-surface-variant">Time window expired</div>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             <div className="sticky bottom-0 bg-white border-t border-surface-variant p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] space-y-2">
+              {replyToId ? (
+                <div className="px-2 py-1 bg-surface-dim rounded-lg flex items-center justify-between gap-2">
+                  <div className="text-sm text-on-surface-variant">Replying to {(() => {
+                    const target = comments.find((it) => (it._id || it.id || it.clientId) === replyToId);
+                    return target ? (target.username || 'User') : 'User';
+                  })()}</div>
+                  <button type="button" className="text-sm text-on-surface-variant hover:text-primary-container" onClick={() => setReplyToId(null)}>Cancel</button>
+                </div>
+              ) : null}
+
               <div className="relative flex items-center">
                 <input
                   className="w-full bg-surface-variant border-2 border-transparent rounded-full py-sm pl-md pr-xl font-body-sm text-on-surface placeholder:text-secondary focus:ring-2 focus:ring-primary-container focus:outline-none focus:border-primary-container focus:bg-white transition-all duration-200"
