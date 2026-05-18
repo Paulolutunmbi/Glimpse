@@ -54,6 +54,16 @@ export default function Messages() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const currentUserId = user?.id || user?._id || null;
 
+  const appendMessage = useCallback((incoming) => {
+    if (!incoming) return;
+    const incomingId = incoming?._id || incoming?.id;
+    setMessages((prev) => {
+      if (!incomingId) return [...prev, incoming];
+      if (prev.some((item) => String(item._id || item.id) === String(incomingId))) return prev;
+      return [...prev, incoming];
+    });
+  }, []);
+
   const loadConversations = useCallback(async () => {
     try {
       const response = await messageService.getConversations();
@@ -97,7 +107,20 @@ export default function Messages() {
       try {
         const response = await messageService.getMessages({ conversationId, limit: 40 });
         const list = Array.isArray(response?.data) ? response.data : [];
-        setMessages(list.reverse());
+        const seen = new Set();
+        const deduped = [];
+        list.reverse().forEach((msg) => {
+          const msgId = msg?._id || msg?.id;
+          if (!msgId) {
+            deduped.push(msg);
+            return;
+          }
+          const key = String(msgId);
+          if (seen.has(key)) return;
+          seen.add(key);
+          deduped.push(msg);
+        });
+        setMessages(deduped);
         await messageService.markConversationRead(conversationId);
         refreshCounts();
       } catch (err) {
@@ -111,12 +134,7 @@ export default function Messages() {
       const incoming = payload?.message || payload;
       if (!incoming) return;
       if (payload?.conversationId && payload.conversationId !== conversationId) return;
-      setMessages((prev) => {
-        const incomingId = incoming?._id || incoming?.id || incoming?.clientId;
-        if (!incomingId) return [...prev, incoming];
-        if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
-        return [...prev, incoming];
-      });
+      appendMessage(incoming);
       refreshCounts();
     };
 
@@ -130,7 +148,7 @@ export default function Messages() {
       }
       socket.off('message:created', handleMessageCreated);
     };
-  }, [activeConversation, refreshCounts]);
+  }, [activeConversation, appendMessage, refreshCounts]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -183,7 +201,7 @@ export default function Messages() {
       });
       const message = response?.data;
       if (message) {
-        setMessages((prev) => [...prev, message]);
+        appendMessage(message);
       }
       loadConversations();
       refreshCounts();

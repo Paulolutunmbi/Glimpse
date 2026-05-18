@@ -79,8 +79,14 @@ export default function CreateGroupModal({ onClose, onGroupCreated }) {
   };
 
   const content = (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full sm:max-w-md bg-white dark:bg-gray-900 shadow-2xl flex flex-col h-[95dvh] sm:h-auto sm:max-h-[85vh] rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-md bg-white dark:bg-gray-900 shadow-2xl flex flex-col h-[95dvh] max-h-[95dvh] sm:h-auto sm:max-h-[85vh] rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 overflow-hidden"
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className="flex items-center justify-between border-b border-outline-variant/30 px-6 py-4 flex-shrink-0">
           <h2 className="text-lg font-bold text-on-surface">Create Group Chat</h2>
           <button

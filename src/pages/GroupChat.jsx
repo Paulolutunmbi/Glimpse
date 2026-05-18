@@ -56,6 +56,16 @@ export default function GroupChat() {
   const messagesEndRef = useRef(null);
   const currentUserId = user?.id || user?._id || null;
 
+  const appendMessage = useCallback((incoming) => {
+    if (!incoming) return;
+    const incomingId = incoming?._id || incoming?.id;
+    setMessages((prev) => {
+      if (!incomingId) return [...prev, incoming];
+      if (prev.some((item) => String(item._id || item.id) === String(incomingId))) return prev;
+      return [...prev, incoming];
+    });
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -74,7 +84,21 @@ export default function GroupChat() {
         setNewGroupName(response.data.name);
 
         const messagesResponse = await messageService.getGroupMessages(groupId, { limit: 40 });
-        setMessages(Array.isArray(messagesResponse?.data) ? messagesResponse.data.reverse() : []);
+        const list = Array.isArray(messagesResponse?.data) ? messagesResponse.data : [];
+        const seen = new Set();
+        const deduped = [];
+        list.reverse().forEach((msg) => {
+          const msgId = msg?._id || msg?.id;
+          if (!msgId) {
+            deduped.push(msg);
+            return;
+          }
+          const key = String(msgId);
+          if (seen.has(key)) return;
+          seen.add(key);
+          deduped.push(msg);
+        });
+        setMessages(deduped);
 
         socket.emit('joinGroupChat', groupId);
       } catch (err) {
@@ -94,12 +118,7 @@ export default function GroupChat() {
     const handleMessageCreated = (payload) => {
       const message = payload?.message || payload;
       if (payload?.groupId && payload.groupId !== groupId) return;
-      setMessages((prev) => {
-        const incomingId = message?._id || message?.id || message?.clientId;
-        if (!incomingId) return [...prev, message];
-        if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
-        return [...prev, message];
-      });
+      appendMessage(message);
     };
 
     const handleMessageDeleted = (payload) => {
@@ -132,7 +151,7 @@ export default function GroupChat() {
       socket.off('message:deleted', handleMessageDeleted);
       socket.off('user:typing', handleUserTyping);
     };
-  }, [groupId, currentUserId]);
+  }, [groupId, currentUserId, appendMessage]);
 
   const handleSendMessage = async () => {
     const trimmed = text.trim();
@@ -143,12 +162,7 @@ export default function GroupChat() {
       const response = await messageService.sendGroupMessage(groupId, { text: trimmed });
       const message = response?.data;
       if (message) {
-        setMessages((prev) => {
-          const incomingId = message?._id || message?.id || message?.clientId;
-          if (!incomingId) return [...prev, message];
-          if (prev.some((m) => (m._id || m.id || m.clientId) === incomingId)) return prev;
-          return [...prev, message];
-        });
+        appendMessage(message);
       }
     } catch (err) {
       console.error(err);

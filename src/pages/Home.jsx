@@ -294,6 +294,32 @@ export default function Home() {
       );
     };
 
+    const handleCommentCreated = (payload) => {
+      const postId = payload?.postId || payload?.id;
+      if (!postId) return;
+      if (typeof payload?.commentsCount !== 'number') return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? { ...item, commentsCount: Math.max(0, payload.commentsCount) }
+            : item
+        )
+      );
+    };
+
+    const handleCommentDeleted = (payload) => {
+      const postId = payload?.postId || payload?.id;
+      if (!postId) return;
+      if (typeof payload?.commentsCount !== 'number') return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? { ...item, commentsCount: Math.max(0, payload.commentsCount) }
+            : item
+        )
+      );
+    };
+
     const handlePostDeleted = (payload) => {
       const postId = payload?.postId || payload?.id;
       if (!postId) return;
@@ -303,6 +329,8 @@ export default function Home() {
     socket.on('post:created', handlePostCreated);
     socket.on('post:updated', handlePostUpdated);
     socket.on('post:liked', handlePostLiked);
+    socket.on('comment:created', handleCommentCreated);
+    socket.on('comment:deleted', handleCommentDeleted);
     socket.on('postDeleted', handlePostDeleted);
     socket.on('post:deleted', handlePostDeleted);
     const handlePostSaved = (payload) => {
@@ -318,6 +346,35 @@ export default function Home() {
     };
 
     socket.on('postSaved', handlePostSaved);
+
+    const handlePostReposted = (payload) => {
+      const postId = payload?.originalPostId || payload?.postId || payload?.id;
+      if (!postId) return;
+      if (typeof payload?.repostCount !== 'number') return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? { ...item, repostCount: Math.max(0, payload.repostCount) }
+            : item
+        )
+      );
+    };
+
+    const handlePostUnreposted = (payload) => {
+      const postId = payload?.originalPostId || payload?.postId || payload?.id;
+      if (!postId) return;
+      if (typeof payload?.repostCount !== 'number') return;
+      setPosts((prev) =>
+        prev.map((item) =>
+          item._id === postId || item.id === postId
+            ? { ...item, repostCount: Math.max(0, payload.repostCount) }
+            : item
+        )
+      );
+    };
+
+    socket.on('post:reposted', handlePostReposted);
+    socket.on('post:unreposted', handlePostUnreposted);
 
     const handleFollowUpdated = () => {
       refreshDiscovery();
@@ -343,9 +400,13 @@ export default function Home() {
       socket.off('post:created', handlePostCreated);
       socket.off('post:updated', handlePostUpdated);
       socket.off('post:liked', handlePostLiked);
+      socket.off('comment:created', handleCommentCreated);
+      socket.off('comment:deleted', handleCommentDeleted);
       socket.off('postDeleted', handlePostDeleted);
       socket.off('post:deleted', handlePostDeleted);
       socket.off('postSaved', handlePostSaved);
+      socket.off('post:reposted', handlePostReposted);
+      socket.off('post:unreposted', handlePostUnreposted);
       socket.off('post:visibility', handleVisibility);
       socket.off('followUpdated', handleFollowUpdated);
     };

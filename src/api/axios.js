@@ -1,8 +1,7 @@
 import axios from "axios";
 
-const RENDER_URL = "https://glimpse-backend-tin1.onrender.com";
 const API = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || RENDER_URL,
+    baseURL: import.meta.env.VITE_API_URL || "https://glimpse-backend-tin1.onrender.com",
 });
 
 const authEvents = new EventTarget();

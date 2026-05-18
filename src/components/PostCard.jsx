@@ -199,13 +199,17 @@ function PostCard({ post, currentUser }) {
     const handleCommentCreated = (payload) => {
       const targetId = payload?.postId;
       if (!targetId || targetId !== postId) return;
-      setCommentsCount((prev) => Math.max(prev + 1, 0));
+      if (typeof payload?.commentsCount === 'number') {
+        setCommentsCount(Math.max(payload.commentsCount, 0));
+      }
     };
 
     const handleCommentDeleted = (payload) => {
       const targetId = payload?.postId;
       if (!targetId || targetId !== postId) return;
-      setCommentsCount((prev) => Math.max(prev - 1, 0));
+      if (typeof payload?.commentsCount === 'number') {
+        setCommentsCount(Math.max(payload.commentsCount, 0));
+      }
     };
 
     socket.on('comment:created', handleCommentCreated);
@@ -855,13 +859,21 @@ function PostCard({ post, currentUser }) {
       )}
 
       <CommentModal
-        post={{ ...post, caption: effectiveCaption, location: effectiveLocation, hashtags: effectiveHashtags }}
+        post={{
+          ...post,
+          caption: effectiveCaption,
+          location: effectiveLocation,
+          hashtags: effectiveHashtags,
+          isRepostedByUser: reposted,
+        }}
         isOpen={openComments}
         onClose={() => setOpenComments(false)}
         liked={liked}
         likes={likes}
-          onToggleLike={handleLike}
-          onCommentCountChange={(delta) => setCommentsCount((prev) => Math.max(0, prev + (Number(delta) || 0)))}
+        onToggleLike={handleLike}
+        onCommentCountChange={(delta) =>
+          setCommentsCount((prev) => Math.max(0, prev + (Number(delta) || 0)))
+        }
         currentUser={currentUser}
       />
     </article>
