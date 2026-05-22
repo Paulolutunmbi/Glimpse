@@ -82,6 +82,8 @@ npm run preview
 
 For deployment, publish the `dist/` output to Vercel or another static host and point `VITE_API_URL` at the deployed backend service. The frontend expects the backend to allow the deployed origin through CORS.
 
+The included `vercel.json` rewrites all browser routes to `index.html`, so direct visits to client routes such as `/forgot-password` and `/reset-password` work in production.
+
 ## API Integration
 
 - `src/api/axios.js` creates the shared Axios client and automatically attaches `Authorization: Bearer <token>` from `localStorage`.
