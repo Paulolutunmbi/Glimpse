@@ -1,72 +1,8 @@
 import axios from "axios";
-
-const LOCAL_API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const FALLBACK_API_URL =
-    import.meta.env.VITE_API_FALLBACK_URL || "https://glimpse-backend-tin1.onrender.com";
-const API_BASE_CACHE_KEY = "glimpse:apiBaseUrl";
-const API_BASE_TTL_MS = 5 * 60 * 1000;
-const HEALTH_PATH = "/api/health";
-
-const readCachedBaseUrl = () => {
-    try {
-        const raw = localStorage.getItem(API_BASE_CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed?.baseUrl || !parsed?.expiresAt) return null;
-        if (Date.now() > parsed.expiresAt) return null;
-        return parsed.baseUrl;
-    } catch {
-        return null;
-    }
-};
-
-const writeCachedBaseUrl = (baseUrl) => {
-    try {
-        localStorage.setItem(
-            API_BASE_CACHE_KEY,
-            JSON.stringify({ baseUrl, expiresAt: Date.now() + API_BASE_TTL_MS })
-        );
-    } catch {
-        // Ignore storage errors; fallback detection still works per request.
-    }
-};
-
-const probeApi = async (baseUrl, timeoutMs = 1200) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const response = await fetch(`${baseUrl}${HEALTH_PATH}`, {
-            method: "GET",
-            signal: controller.signal,
-        });
-        return response.ok;
-    } catch {
-        return false;
-    } finally {
-        clearTimeout(timeoutId);
-    }
-};
-
-let baseUrlPromise;
-const resolveApiBaseUrl = async () => {
-    const cached = readCachedBaseUrl();
-    if (cached) return cached;
-
-    const localOk = await probeApi(LOCAL_API_URL);
-    const resolved = localOk ? LOCAL_API_URL : FALLBACK_API_URL;
-    writeCachedBaseUrl(resolved);
-    return resolved;
-};
-
-const getApiBaseUrl = () => {
-    if (!baseUrlPromise) {
-        baseUrlPromise = resolveApiBaseUrl();
-    }
-    return baseUrlPromise;
-};
+import { API_BASE_URL } from "../config/api";
 
 const API = axios.create({
-    baseURL: FALLBACK_API_URL,
+    baseURL: API_BASE_URL,
 });
 
 const authEvents = new EventTarget();
@@ -87,9 +23,6 @@ export const onAuthLogout = (handler) => {
 
 API.interceptors.request.use(async (req) => {
     const token = localStorage.getItem("token");
-    const baseUrl = await getApiBaseUrl();
-    req.baseURL = baseUrl;
-    API.defaults.baseURL = baseUrl;
 
     if (token) {
         req.headers.Authorization = `Bearer ${token}`;
@@ -104,11 +37,6 @@ API.interceptors.response.use(
         const status = error?.response?.status;
         const code = error?.response?.data?.code;
 
-        if (!error?.response && API.defaults.baseURL === LOCAL_API_URL) {
-            writeCachedBaseUrl(FALLBACK_API_URL);
-            API.defaults.baseURL = FALLBACK_API_URL;
-        }
-        
         if (status === 401 || (status === 403 && code === 'BANNED')) {
             localStorage.removeItem("token");
             authEvents.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));

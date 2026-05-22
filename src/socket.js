@@ -1,8 +1,7 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "./config/api";
 
-const URL = import.meta.env.VITE_API_URL || "https://glimpse-backend-tin1.onrender.com";
-
-export const socket = io(URL, {
+export const socket = io(API_BASE_URL, {
 	transports: ["websocket", "polling"],
 	reconnection: true,
 	reconnectionAttempts: 5,

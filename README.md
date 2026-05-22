@@ -52,9 +52,9 @@ Glimpse is a React-based social content experience for browsing moments, managin
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `VITE_API_URL` | No | `https://glimpse-backend-tin1.onrender.com` | Base URL for the backend API and socket connection |
+| `VITE_API_URL` | No | Local dev: `http://localhost:5000`; production: `https://glimpse-backend-tin1.onrender.com` | Base URL for the backend API and socket connection |
 
-If `VITE_API_URL` is not set, the app connects to the Render backend at `https://glimpse-backend-tin1.onrender.com`.
+Local development can use the checked-in `.env.example` value. In Vercel, set `VITE_API_URL=https://glimpse-backend-tin1.onrender.com` so the production bundle points at Render.
 
 ## Run Locally
 
@@ -80,7 +80,7 @@ Preview the production build locally:
 npm run preview
 ```
 
-For deployment, publish the `dist/` output to a static host and point `VITE_API_URL` at the deployed backend service. The frontend expects the backend to allow the deployed origin through CORS.
+For deployment, publish the `dist/` output to Vercel or another static host and point `VITE_API_URL` at the deployed backend service. The frontend expects the backend to allow the deployed origin through CORS.
 
 ## API Integration
 
