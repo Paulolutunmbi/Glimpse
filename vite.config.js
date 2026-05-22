@@ -3,14 +3,15 @@ import react from '@vitejs/plugin-react'
 
 const productionFrontendUrl = 'https://glimpse-theta-swart.vercel.app'
 
-const stripLocalhostFromProductionBundle = (mode) => ({
-  name: 'strip-localhost-from-production-bundle',
+const stripLibraryLocalFallbackFromProductionBundle = (mode) => ({
+  name: 'strip-library-local-fallback-from-production-bundle',
   renderChunk(code) {
     if (mode !== 'production') return null
+    const productionFrontendHost = new URL(productionFrontendUrl).hostname
     return {
       code: code
         .replaceAll('http://localhost', productionFrontendUrl)
-        .replaceAll('localhost', new URL(productionFrontendUrl).hostname),
+        .replaceAll('localhost', productionFrontendHost),
       map: null,
     }
   },
@@ -22,7 +23,7 @@ export default defineConfig(({ mode }) => {
   const devApiUrl = env.VITE_API_URL || 'http://localhost:5000'
 
   return {
-    plugins: [react(), stripLocalhostFromProductionBundle(mode)],
+    plugins: [react(), stripLibraryLocalFallbackFromProductionBundle(mode)],
     server: {
       proxy: {
         '/api': {

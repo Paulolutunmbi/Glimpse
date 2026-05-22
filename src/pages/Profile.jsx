@@ -59,7 +59,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
+    <div className="min-h-screen bg-background text-on-background font-body-md antialiased pb-20 md:pb-0">
       <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 font-['Plus_Jakarta_Sans'] text-[#FF5A5F]">
           <img
@@ -90,7 +90,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="mx-auto mt-xl max-w-[1200px] px-margin_mobile md:px-margin_desktop">
+      <main className="mx-auto max-w-[1200px] px-margin_mobile pt-24 md:px-margin_desktop">
         <section className="mb-xxl flex w-full flex-col items-center text-center">
           <div className="mb-md">
             <Avatar
@@ -118,7 +118,7 @@ const Profile = () => {
             <button
               className="rounded-lg border-b-2 border-primary/20 bg-primary-container px-lg py-sm font-label-md text-label-md text-on-primary shadow-sm transition-all active:scale-95"
               type="button"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/edit-profile')}
             >
               Edit Profile
             </button>

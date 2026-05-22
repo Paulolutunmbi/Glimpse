@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import PublicProfile from './pages/PublicProfile';
 import ProfileSetup from './pages/ProfileSetup';
 import ResetPassword from './pages/ResetPassword';
@@ -97,6 +98,7 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/saved" element={<SavedMoments />} />

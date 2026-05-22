@@ -111,9 +111,9 @@ const ForgotPassword = () => {
               Still having trouble?
               <a
                 className="ml-1 font-label-md text-label-md text-primary-container transition-colors hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-container/35"
-                href="mailto:support@glimpse.app"
+                href="mailto:oluwatunmbipaul@gmail.com"
               >
-                Contact Support
+                Glimpse Support &lt;oluwatunmbipaul@gmail.com&gt;
               </a>
             </p>
           </div>
