@@ -16,6 +16,7 @@ export default function Navbar({ currentUser, search, onSearchChange }) {
     <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-full items-center justify-between gap-2 sm:gap-4 px-4 py-3 md:px-8">
         <div className="flex flex-1 items-center gap-3 sm:gap-6 min-w-0">
+          <img src="/images/glimpse-logo-light-dark.png" alt="Glimpse" className="h-8 w-auto md:hidden object-contain" />
           <button
             className={`flex items-center gap-2 rounded-full border px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all duration-200 md:hidden ${
               location.pathname === '/search'

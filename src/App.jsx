@@ -20,6 +20,7 @@ import GroupChat from './pages/GroupChat';
 import Search from './pages/Search';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
+import Goodbye from './pages/Goodbye';
 
 const LoadingScreen = () => (
   <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
@@ -73,6 +74,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/u/:username" element={<PublicProfile />} />
+        <Route path="/goodbye" element={<Goodbye />} />
         <Route
           path="/profile-setup"
           element={

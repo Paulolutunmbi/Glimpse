@@ -18,6 +18,10 @@ const Settings = () => {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOutOthers, setIsLoggingOutOthers] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -93,13 +97,34 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = () => {
-    const confirmed = window.confirm(
-      'This action is permanent. Do you want to contact support to delete your account?'
-    );
-    if (!confirmed) return;
+    setDeleteError('');
+    setDeletePassword('');
+    setShowDeleteModal(true);
+  };
 
-    const subject = encodeURIComponent('Delete my Glimpse account');
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}`;
+  const confirmDelete = async () => {
+    setDeleteError('');
+    const confirmed = window.confirm('This action is permanent. Delete your account now?');
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      const payload = {};
+      if (deletePassword) payload.password = deletePassword;
+      const resp = await userService.deleteAccount(payload);
+      try {
+        const { authService } = await import('../services/apiService');
+        authService.logout();
+      } catch (e) {
+        localStorage.removeItem('token');
+      }
+      const email = resp?.email;
+      setShowDeleteModal(false);
+      navigate(`/goodbye${email ? `?email=${encodeURIComponent(email)}` : ''}`);
+    } catch (err) {
+      setDeleteError(err?.response?.data?.message || err?.message || 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
 
@@ -208,6 +233,30 @@ const Settings = () => {
               Show my email on my profile
             </label>
           </section>
+
+          {showDeleteModal ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
+              <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+                <h3 className="mb-2 font-h3 text-h3 text-on-surface">Delete account</h3>
+                <p className="mb-4 text-body-sm text-on-surface-variant">This action is permanent. Enter your password to confirm (optional).</p>
+                {deleteError ? <div className="mb-3 rounded-md bg-error-container/20 p-3 text-sm text-on-error-container">{deleteError}</div> : null}
+                <input
+                  type="password"
+                  placeholder="Current password (optional)"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="mb-4 w-full rounded-lg border border-outline-variant px-3 py-2"
+                />
+                <div className="flex justify-end gap-3">
+                  <button type="button" className="rounded-lg px-4 py-2" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                  <button type="button" className="rounded-lg bg-error px-4 py-2 text-white" onClick={confirmDelete} disabled={isDeleting}>
+                    {isDeleting ? 'Deleting...' : 'Delete account'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-lg shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)]">
             <h2 className="mb-sm font-h3 text-h3 text-on-surface">Account Security</h2>

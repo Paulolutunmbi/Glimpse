@@ -218,6 +218,10 @@ export const userService = {
         const response = await api.post('/api/user/reset-password');
         return response.data;
     },
+    deleteAccount: async (payload = {}) => {
+        const response = await api.delete('/api/user/delete', { data: payload });
+        return response.data;
+    },
 };
 
 export const settingsService = {
@@ -399,6 +403,13 @@ export const messageService = {
 export const discoveryService = {
     getDiscovery: async () => {
         const response = await api.get('/api/discovery');
+        return response.data;
+    },
+};
+
+export const feedbackService = {
+    submit: async (payload) => {
+        const response = await api.post('/api/feedback', payload);
         return response.data;
     },
 };

@@ -18,9 +18,9 @@ export default function Sidebar() {
     <nav className="fixed left-0 top-0 z-30 hidden h-[100dvh] w-72 flex-col gap-6 border-r border-gray-100 bg-white px-6 pb-6 pt-8 text-base font-medium dark:border-gray-800 dark:bg-gray-900 md:flex font-display">
       <div className="flex items-center gap-3 px-2 pb-2 border-b border-outline-variant/20">
         <img
-          src="/images/glimpse-icon.png"
+          src="/images/glimpse-logo-light-dark.png"
           alt="Glimpse"
-          className="object-contain h-8 w-8"
+          className="object-contain h-8 w-auto"
         />
       </div>
 
