@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { settingsService, userService } from '../services/apiService';
+import { authService, settingsService, userService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
-
-const SUPPORT_EMAIL = 'oluwatunmbipaul@gmail.com';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -65,17 +63,6 @@ const Settings = () => {
     }
   };
 
-  const handleResetPassword = async () => {
-    setError('');
-    setSuccess('');
-    try {
-      const response = await userService.sendPasswordResetEmail();
-      setSuccess(response?.message || 'Reset link sent to your email.');
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to send reset email.'));
-    }
-  };
-
   const handleLogoutOthers = async () => {
     const confirmed = window.confirm(
       'Are you sure? This will sign out all other devices using your account.'
@@ -112,9 +99,8 @@ const Settings = () => {
       if (deletePassword) payload.password = deletePassword;
       const resp = await userService.deleteAccount(payload);
       try {
-        const { authService } = await import('../services/apiService');
         authService.logout();
-      } catch (e) {
+      } catch {
         localStorage.removeItem('token');
       }
       const email = resp?.email;
@@ -264,13 +250,13 @@ const Settings = () => {
               <div>
                 <p className="font-label-md text-label-md text-on-surface">Password</p>
                 <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                  We&apos;ll send a secure link to your email to reset your password.
+                  Reset your password after confirming your account details.
                 </p>
               </div>
               <button
                 className="whitespace-nowrap rounded-lg border border-outline-variant px-6 py-2 font-label-md text-label-md text-on-surface transition-colors duration-150 hover:bg-surface-container active:scale-95"
                 type="button"
-                onClick={handleResetPassword}
+                onClick={() => navigate('/forgot-password')}
               >
                 Reset Password
               </button>

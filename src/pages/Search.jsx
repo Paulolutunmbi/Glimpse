@@ -4,6 +4,7 @@ import PostCard from '../components/PostCard';
 import { searchService, userService } from '../services/apiService';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 export default function Search() {
   const { user, relations, savedPosts, refreshCounts } = useUser();
@@ -177,7 +178,10 @@ export default function Search() {
                         className="h-12 w-12 flex-shrink-0"
                       />
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-on-surface truncate">{item.username || item.name}</p>
+                        <p className="inline-flex max-w-full items-center gap-1 text-sm font-bold text-on-surface">
+                          <span className="truncate">{item.username || item.name}</span>
+                          <VerifiedBadge verified={item.verified} size={12} />
+                        </p>
                         <p className="text-xs text-on-surface-variant truncate">{item.fullName || item.name}</p>
                       </div>
                     </div>

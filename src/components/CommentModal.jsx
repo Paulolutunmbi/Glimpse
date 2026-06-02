@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { commentService } from "../services/apiService";
 import { socket } from "../socket";
 import Avatar from "./Avatar";
+import VerifiedBadge from "./VerifiedBadge";
 
 const CommentModal = ({
   post,
@@ -61,11 +62,6 @@ const CommentModal = ({
     const formatted = (numeric / 1000).toFixed(numeric >= 10000 ? 0 : 1);
     return `${formatted.replace(/\.0$/, "")}k`;
   };
-
-  const getCommentKey = (comment) =>
-    comment?._id || comment?.id || comment?.clientId || `${comment?.text}-${comment?.username}`;
-
-  const getCommentId = (comment) => comment?._id || comment?.id || null;
 
   const matchesOptimistic = (existing, incoming) => {
     if (!existing?.isOptimistic || !incoming) return false;
@@ -449,7 +445,10 @@ const CommentModal = ({
             </div>
 
             <div className="p-4 border-b border-surface-variant bg-white">
-              <p className="font-label-md text-on-surface">{postUsername}</p>
+              <p className="font-label-md text-on-surface inline-flex items-center gap-1">
+                <span>{postUsername}</span>
+                <VerifiedBadge verified={post?.user?.verified} size={12} />
+              </p>
               {caption && (
                 <p className="font-body-sm text-on-surface-variant">{caption}</p>
               )}
@@ -537,8 +536,9 @@ const CommentModal = ({
                       />
                       <div className="flex-1 flex items-start gap-2">
                         <div className="flex-1 bg-surface-variant rounded-xl p-3 rounded-tl-none">
-                          <span className="font-label-md text-on-surface block mb-1">
-                            {c.username || "Guest"}
+                          <span className="font-label-md text-on-surface block mb-1 inline-flex items-center gap-1">
+                            <span>{c.username || "Guest"}</span>
+                            <VerifiedBadge verified={c.verified} size={12} />
                           </span>
                           {editingId === commentKey ? (
                             <input
@@ -646,8 +646,9 @@ const CommentModal = ({
                                 name={reply.username || currentUser?.username || post?.user?.username}
                               />
                               <div className="flex-1 bg-surface-container-lowest rounded-xl p-3">
-                                <span className="font-label-md text-on-surface block mb-1">
-                                  {reply.username || "Guest"}
+                                <span className="font-label-md text-on-surface block mb-1 inline-flex items-center gap-1">
+                                  <span>{reply.username || "Guest"}</span>
+                                  <VerifiedBadge verified={reply.verified} size={12} />
                                 </span>
                                 <div className="font-body-sm text-on-surface-variant">
                                   <span>{reply.text}</span>
@@ -670,7 +671,7 @@ const CommentModal = ({
               {replyTo ? (
                 <div className="flex items-center justify-between rounded-lg bg-surface-dim px-3 py-2 text-xs text-on-surface-variant">
                   <span>
-                    Replying to <span className="font-semibold text-on-surface">@{replyTo.username || "User"}</span>
+                    Replying to <span className="font-semibold text-on-surface inline-flex items-center gap-1">@{replyTo.username || "User"}<VerifiedBadge verified={replyTo.verified} size={12} /></span>
                   </span>
                   <button
                     type="button"
@@ -756,7 +757,10 @@ const CommentModal = ({
                           src={user.avatar || ''}
                           name={user.username}
                         />
-                        <span className="text-xs">{user.username}</span>
+                        <span className="text-xs inline-flex items-center gap-1">
+                          <span>{user.username}</span>
+                          <VerifiedBadge verified={user.verified} size={11} />
+                        </span>
                       </button>
                     ))}
                 </div>

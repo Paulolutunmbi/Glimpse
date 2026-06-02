@@ -13,12 +13,7 @@ const mobileImage =
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState(() => {
-    const storedEmail = localStorage.getItem('pendingEmail') || '';
-    const stateEmail = location.state?.email || '';
-
-    return stateEmail || storedEmail;
-  });
+  const [loginId, setLoginId] = useState(() => location.state?.email || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -35,14 +30,13 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      const payload = { email: email.trim(), password };
+      const payload = { identifier: loginId.trim(), password };
       const data = await authService.login(payload);
       const token = data?.token || data?.data?.token || data?.accessToken || data?.jwt;
       const redirectTo = data?.redirectTo || data?.data?.redirectTo || '/';
 
       if (token) {
         setAuthToken(token);
-        localStorage.removeItem('pendingEmail');
         await refreshUser();
       }
 
@@ -94,22 +88,22 @@ const Login = () => {
                     className="mb-1 block font-label-md text-label-md text-on-surface-variant"
                     htmlFor="email"
                   >
-                    Email
+                    Username or Email
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined pointer-events-none absolute left-sm top-1/2 -translate-y-1/2 text-[20px] text-outline transition-colors group-focus-within:text-primary-container">
-                      mail
+                      alternate_email
                     </span>
                     <input
                       id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
+                      name="identifier"
+                      type="text"
+                      autoComplete="username"
                       required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      value={loginId}
+                      onChange={(event) => setLoginId(event.target.value)}
                       className="ambient-shadow block h-12 w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-2 pl-10 pr-2 font-body-md text-body-md text-on-background placeholder:text-outline-variant focus:border-primary-container focus:outline-none focus:ring-0"
-                      placeholder="hello@example.com"
+                      placeholder="username or hello@example.com"
                     />
                   </div>
                 </div>

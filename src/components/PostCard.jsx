@@ -4,6 +4,7 @@ import { socket } from '../socket';
 import CommentModal from './CommentModal';
 import Avatar from './Avatar';
 import MediaCarousel from './MediaCarousel';
+import VerifiedBadge from './VerifiedBadge';
 
 function PostCard({ post, currentUser }) {
   const postId = useMemo(() => post?._id || post?.id, [post]);
@@ -368,8 +369,9 @@ function PostCard({ post, currentUser }) {
           </span>
           <p className="text-xs text-on-surface-variant font-medium">
             Reshared by{' '}
-            <span className="font-label-sm text-on-surface">
+            <span className="font-label-sm text-on-surface inline-flex items-center gap-1">
               {post.reposter.username || 'Someone'}
+              <VerifiedBadge verified={post.reposter?.verified} size={12} />
             </span>
           </p>
         </div>
@@ -393,8 +395,9 @@ function PostCard({ post, currentUser }) {
             name={user?.username || user?.name}
           />
           <div>
-            <h3 className="font-label-md text-on-surface leading-tight cursor-pointer hover:underline">
-              {user?.username}
+            <h3 className="font-label-md text-on-surface leading-tight cursor-pointer hover:underline inline-flex items-center gap-1">
+              <span>{user?.username}</span>
+              <VerifiedBadge verified={user?.verified} size={12} />
             </h3>
             <p className="font-body-sm text-on-surface-variant text-[12px]">
               {effectiveLocation || user?.location ? `${effectiveLocation || user?.location} • ` : ''}{timestamp}
@@ -564,7 +567,10 @@ function PostCard({ post, currentUser }) {
         </div>
 
         <div className="font-body-sm text-on-surface">
-          <span className="font-label-md font-bold mr-1 hover:underline cursor-pointer transition-colors">{user?.username}</span>
+          <span className="font-label-md font-bold mr-1 hover:underline cursor-pointer transition-colors inline-flex items-center gap-1">
+            {user?.username}
+            <VerifiedBadge verified={user?.verified} size={12} />
+          </span>
           {effectiveCaption}
         </div>
         {Array.isArray(effectiveHashtags) && effectiveHashtags.length > 0 ? (
@@ -796,8 +802,9 @@ function PostCard({ post, currentUser }) {
                           name={user?.username}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-on-surface truncate text-sm">
-                            {user?.username}
+                          <p className="font-semibold text-on-surface truncate text-sm inline-flex items-center gap-1">
+                            <span>{user?.username}</span>
+                            <VerifiedBadge verified={user?.verified} size={12} />
                           </p>
                           <p className="text-xs text-on-surface-variant truncate">
                             {timestamp}

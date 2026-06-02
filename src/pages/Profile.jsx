@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
 
@@ -100,10 +101,14 @@ const Profile = () => {
               name={displayName || handle}
             />
           </div>
-          <h1 className="mb-xs font-h1 text-h1 text-on-surface">{displayName}</h1>
+          <h1 className="mb-xs inline-flex items-center justify-center gap-2 font-h1 text-h1 text-on-surface">
+            <span>{displayName}</span>
+            <VerifiedBadge verified={user?.verified} size={18} />
+          </h1>
           {handle ? (
-            <p className="mb-md font-body-md text-body-md text-on-surface-variant">
-              @{handle}
+            <p className="mb-md inline-flex items-center justify-center gap-1 font-body-md text-body-md text-on-surface-variant">
+              <span>@{handle}</span>
+              <VerifiedBadge verified={user?.verified} size={13} />
             </p>
           ) : null}
           {bio ? (

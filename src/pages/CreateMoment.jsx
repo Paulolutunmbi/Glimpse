@@ -5,7 +5,9 @@ import MediaCarousel from '../components/MediaCarousel';
 
 const MAX_MEDIA_COUNT = 10;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/', 'video/'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
 
 const parseList = (value) =>
   value
@@ -26,7 +28,6 @@ export default function CreateMoment() {
   const [step, setStep] = useState(1);
   const [caption, setCaption] = useState('');
   const [tags, setTags] = useState('');
-  const [hashtags, setHashtags] = useState('');
   const [location, setLocation] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [files, setFiles] = useState([]);
@@ -66,9 +67,9 @@ export default function CreateMoment() {
 
     const next = [];
     for (const file of selected) {
-      const isAllowed = ALLOWED_TYPES.some((type) => file.type.startsWith(type));
+      const isAllowed = ALLOWED_TYPES.includes(file.type);
       if (!isAllowed) {
-        setError('Only image or video files are allowed.');
+        setError('Only JPEG, PNG, WebP, MP4, MOV, or WebM files are allowed.');
         return;
       }
       if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -142,7 +143,7 @@ export default function CreateMoment() {
       navigate('/');
     } catch (err) {
       console.error(err);
-      setError('Failed to publish moment.');
+      setError(err?.response?.data?.message || err?.response?.data?.error || err?.response?.data?.details || 'Failed to publish moment.');
     } finally {
       setIsSubmitting(false);
     }
@@ -175,7 +176,7 @@ export default function CreateMoment() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
                   multiple
                   className="sr-only"
                   onChange={handleFileChange}

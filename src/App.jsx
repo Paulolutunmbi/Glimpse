@@ -8,10 +8,8 @@ import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import PublicProfile from './pages/PublicProfile';
 import ProfileSetup from './pages/ProfileSetup';
-import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import Signup from './pages/Signup';
-import Verify from './pages/Verify';
 import SavedMoments from './pages/SavedMoments';
 import CreateMoment from './pages/CreateMoment';
 import Reels from './pages/Reels';
@@ -69,10 +67,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/signup" element={<Signup />} />
-        <Route path="/verify" element={<Verify />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/u/:username" element={<PublicProfile />} />
         <Route path="/goodbye" element={<Goodbye />} />
         <Route

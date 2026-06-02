@@ -10,7 +10,9 @@ import { getApiErrorMessage } from '../utils/errors';
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const ForgotPassword = () => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -19,11 +21,17 @@ const ForgotPassword = () => {
     event.preventDefault();
 
     const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
     setError('');
     setSuccess(false);
 
+    if (!trimmedUsername) {
+      setError('Enter your username.');
+      return;
+    }
+
     if (!trimmedEmail) {
-      setError('Enter your email address.');
+      setError('Enter the email on your account.');
       return;
     }
 
@@ -32,13 +40,25 @@ const ForgotPassword = () => {
       return;
     }
 
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await authService.forgotPassword({ email: trimmedEmail });
+      await authService.forgotPassword({
+        username: trimmedUsername,
+        email: trimmedEmail,
+        newPassword: password,
+      });
       setSuccess(true);
+      setUsername('');
+      setEmail('');
+      setPassword('');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to send reset link. Please try again.'));
+      setError(getApiErrorMessage(err, 'Unable to reset password. Please check your details.'));
     } finally {
       setLoading(false);
     }
@@ -71,16 +91,28 @@ const ForgotPassword = () => {
             Forgot Password
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant dark:text-[#f7dcdb]">
-            Enter your email and we'll send you a reset link to regain access to your account.
+            Confirm your account details and choose a new password.
           </p>
         </header>
 
         <form className="space-y-lg" onSubmit={handleSubmit} noValidate>
           <InputField
+            id="username"
+            name="username"
+            type="text"
+            label="Username"
+            icon="person"
+            autoComplete="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="username"
+          />
+
+          <InputField
             id="email"
             name="email"
             type="email"
-            label="Email Address"
+            label="Account Email"
             icon="mail"
             autoComplete="email"
             inputMode="email"
@@ -90,34 +122,28 @@ const ForgotPassword = () => {
             error={error}
           />
 
+          <InputField
+            id="newPassword"
+            name="newPassword"
+            type="password"
+            label="New Password"
+            icon="lock"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="At least 8 characters"
+          />
+
           <Button type="submit" loading={loading}>
-            Send Reset Link
+            Reset Password
           </Button>
 
           {success ? (
             <StatusMessage tone="success">
-              If an account exists, a reset link has been sent.
+              Password updated. You can now log in.
             </StatusMessage>
           ) : null}
         </form>
-
-        <div className="mt-xl space-y-lg text-center">
-          <StatusMessage tone="info">
-            Check your spam folder if you don't see the email within a few minutes.
-          </StatusMessage>
-
-          <div className="border-t border-outline-variant pt-lg dark:border-[#654746]">
-            <p className="font-body-sm text-body-sm text-on-surface-variant dark:text-[#f7dcdb]">
-              Still having trouble?
-              <a
-                className="ml-1 font-label-md text-label-md text-primary-container transition-colors hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary-container/35"
-                href="mailto:oluwatunmbipaul@gmail.com"
-              >
-                Glimpse Support &lt;oluwatunmbipaul@gmail.com&gt;
-              </a>
-            </p>
-          </div>
-        </div>
       </section>
     </AuthLayout>
   );

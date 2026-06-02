@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/apiService';
 import { getApiErrorMessage } from '../utils/errors';
+import { useUser } from '../context/UserContext.jsx';
 
 const signupPhotos = {
   left:
@@ -14,6 +15,7 @@ const signupPhotos = {
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { setAuthToken, refreshUser } = useUser();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,16 +41,16 @@ const Signup = () => {
       }
 
       const payload = { username: username.trim(), email: email.trim(), password };
-      await authService.register(payload);
-      localStorage.setItem('pendingEmail', payload.email);
-      setSuccess('Account created. We sent a verification code to your email.');
+      const data = await authService.register(payload);
+      const token = data?.token || data?.data?.token || data?.accessToken || data?.jwt;
+      const redirectTo = data?.redirectTo || data?.data?.redirectTo || '/profile-setup';
+      if (token) {
+        setAuthToken(token);
+        await refreshUser();
+      }
+      setSuccess('Account created. Redirecting...');
       setTimeout(() => {
-        navigate('/verify', {
-          state: {
-            email: payload.email,
-            notice: 'Account created. Enter the verification code we sent to your email.',
-          },
-        });
+        navigate(redirectTo, { replace: true });
       }, 600);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Signup failed. Please try again.'));

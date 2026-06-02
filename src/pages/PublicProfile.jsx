@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { userService } from '../services/apiService';
 
 const PublicProfile = () => {
@@ -150,8 +151,14 @@ const PublicProfile = () => {
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div className="flex-1 text-center">
-            <h1 className="font-semibold">{displayName}</h1>
-            <p className="text-sm text-zinc-500">@{handle}</p>
+            <h1 className="inline-flex items-center justify-center gap-1 font-semibold">
+              <span>{displayName}</span>
+              <VerifiedBadge verified={profile.user?.verified} size={13} />
+            </h1>
+            <p className="flex items-center justify-center gap-1 text-sm text-zinc-500">
+              <span>@{handle}</span>
+              <VerifiedBadge verified={profile.user?.verified} size={11} />
+            </p>
           </div>
           <button
             onClick={handleShareProfile}
@@ -212,8 +219,14 @@ const PublicProfile = () => {
 
           {/* User Info */}
           <div className="mb-4">
-            <h1 className="text-xl font-bold">{displayName}</h1>
-            <p className="text-sm text-zinc-500">@{handle}</p>
+            <h1 className="inline-flex items-center gap-1 text-xl font-bold">
+              <span>{displayName}</span>
+              <VerifiedBadge verified={profile.user?.verified} size={15} />
+            </h1>
+            <p className="flex items-center gap-1 text-sm text-zinc-500">
+              <span>@{handle}</span>
+              <VerifiedBadge verified={profile.user?.verified} size={11} />
+            </p>
           </div>
 
           {bio && <p className="mb-4 text-sm text-on-background/80">{bio}</p>}
@@ -257,6 +270,7 @@ const PublicProfile = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-1">
                       <h3 className="font-bold">{post.user?.name}</h3>
+                      <VerifiedBadge verified={post.user?.verified} size={12} />
                       <span className="text-zinc-500">@{post.user?.username}</span>
                     </div>
                     {post.caption && <p className="mt-2 text-sm">{post.caption}</p>}

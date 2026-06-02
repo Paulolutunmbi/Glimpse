@@ -2,6 +2,7 @@ import { useEffect, useState, memo, useCallback, useMemo } from 'react';
 import { userService } from '../services/apiService';
 import { socket } from '../socket';
 import Avatar from './Avatar';
+import VerifiedBadge from './VerifiedBadge';
 
 function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
   const [followingIds, setFollowingIds] = useState(new Set());
@@ -88,8 +89,9 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
                     name={creator.name || creator.username}
                   />
                   <div className="min-w-0">
-                    <div className="truncate font-label-md text-on-surface transition-colors group-hover:text-primary-container">
-                      {creator.name || creator.username}
+                    <div className="truncate font-label-md text-on-surface transition-colors group-hover:text-primary-container inline-flex items-center gap-1">
+                      <span>{creator.name || creator.username}</span>
+                      <VerifiedBadge verified={creator.verified} size={12} />
                     </div>
                     <div className="truncate text-[12px] text-secondary font-body-sm">
                       {creator.specialty || (index === 0 ? 'Photography' : 'Creator')}

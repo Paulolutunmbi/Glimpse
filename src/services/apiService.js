@@ -5,24 +5,12 @@ export const authService = {
         const response = await api.post('/api/auth/register', userData);
         return response.data;
     },
-    verify: async (payload) => {
-        const response = await api.post('/api/auth/verify', payload);
-        return response.data;
-    },
-    resendVerification: async (payload) => {
-        const response = await api.post('/api/auth/resend-verification', payload);
-        return response.data;
-    },
     login: async (userData) => {
         const response = await api.post('/api/auth/login', userData);
         return response.data;
     },
     forgotPassword: async (payload) => {
         const response = await api.post('/api/auth/forgot-password', payload);
-        return response.data;
-    },
-    resetPassword: async (payload) => {
-        const response = await api.post('/api/auth/reset-password', payload);
         return response.data;
     },
     logout: () => {
@@ -212,10 +200,6 @@ export const userService = {
     toggleFollow: async (userId, isFollowing) => {
         const endpoint = isFollowing ? 'unfollow' : 'follow';
         const response = await api.post(`/api/user/${endpoint}/${userId}`);
-        return response.data;
-    },
-    sendPasswordResetEmail: async () => {
-        const response = await api.post('/api/user/reset-password');
         return response.data;
     },
     deleteAccount: async (payload = {}) => {

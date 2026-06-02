@@ -1,6 +1,6 @@
 # Glimpse Frontend
 
-Glimpse is a React-based social content experience for browsing moments, managing a profile, saving posts, and handling account flows such as signup, verification, and password reset.
+Glimpse is a React-based social content experience for browsing moments, managing a profile, saving posts, and handling account flows such as signup, login, and direct password reset.
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ Glimpse is a React-based social content experience for browsing moments, managin
 
 ## Features
 
-- Auth flows for signup, email verification, login, forgot password, and reset password.
+- Auth flows for signup, login, and direct forgot-password reset.
 - Protected routes for the main feed, profile, settings, and profile setup.
 - User profile state managed centrally through context.
 - Feed rendering with live socket updates for new posts, likes, and deletions.
@@ -82,7 +82,7 @@ npm run preview
 
 For deployment, publish the `dist/` output to Vercel or another static host and point `VITE_API_URL` at the deployed backend service. The frontend expects the backend to allow the deployed origin through CORS.
 
-The included `vercel.json` rewrites all browser routes to `index.html`, so direct visits to client routes such as `/forgot-password` and `/reset-password` work in production.
+The included `vercel.json` rewrites all browser routes to `index.html`, so direct visits to client routes such as `/forgot-password` work in production.
 
 ## API Integration
 
@@ -98,7 +98,7 @@ The included `vercel.json` rewrites all browser routes to `index.html`, so direc
 - All authenticated requests rely on the token stored in `localStorage`; do not change the auth flow without updating the Axios interceptor and `UserContext`.
 - File uploads are sent as `FormData`, so any API changes on the backend must preserve the expected field names.
 - Run `npm run lint` before submitting changes.
-- The app currently uses JavaScript, not TypeScript, and the route guards assume the backend returns `profileCompleted` and `isVerified` flags.
+- The app currently uses JavaScript, not TypeScript, and the route guards assume the backend returns profile completion flags.
 
 ## PWA Update Mechanism (simple explanation)
 

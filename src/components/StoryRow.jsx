@@ -1,4 +1,5 @@
 import Avatar from './Avatar';
+import VerifiedBadge from './VerifiedBadge';
 
 export default function StoryRow({ stories }) {
   return (
@@ -18,7 +19,10 @@ export default function StoryRow({ stories }) {
               </div>
             )}
           </div>
-          <span className="font-label-sm text-on-surface">{story.username}</span>
+          <span className="font-label-sm text-on-surface inline-flex items-center gap-1">
+            <span>{story.username}</span>
+            <VerifiedBadge verified={story.verified} size={11} />
+          </span>
         </div>
       ))}
     </div>

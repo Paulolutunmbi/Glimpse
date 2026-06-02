@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import { adminService } from '../services/apiService';
@@ -260,7 +261,7 @@ const Admin = () => {
   const activePosters = analytics?.series?.activePosters || [];
 
   return (
-    <div className="min-h-screen bg-background text-on-background pt-16 pb-20 md:pb-8">
+    <div className="min-h-screen bg-background text-on-background pb-20 md:pb-8">
       <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
           <h1 className="text-lg font-semibold text-[#FF5A5F] md:text-xl">Admin Dashboard</h1>
@@ -448,40 +449,43 @@ const Admin = () => {
         </section>
       </main>
 
-      {confirmAction ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setConfirmAction(null)}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-lg md:max-w-sm"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <h3 className="text-lg font-semibold text-on-surface">Confirm Action</h3>
-            <p className="mt-2 text-sm text-on-surface-variant break-words">{confirmAction.message}</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                className="rounded-lg border border-outline-variant/30 px-4 py-2"
-                type="button"
-                onClick={() => setConfirmAction(null)}
-                disabled={Boolean(actionLoading)}
+      {confirmAction
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
+              onClick={() => setConfirmAction(null)}
+            >
+              <div
+                className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-lg md:max-w-sm"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
               >
-                Cancel
-              </button>
-              <button
-                className="rounded-lg bg-error px-4 py-2 text-white disabled:opacity-60"
-                type="button"
-                onClick={confirmAction.onConfirm}
-                disabled={Boolean(actionLoading)}
-              >
-                {actionLoading ? '...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+                <h3 className="text-lg font-semibold text-on-surface">Confirm Action</h3>
+                <p className="mt-2 text-sm text-on-surface-variant break-words">{confirmAction.message}</p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    className="rounded-lg border border-outline-variant/30 px-4 py-2"
+                    type="button"
+                    onClick={() => setConfirmAction(null)}
+                    disabled={Boolean(actionLoading)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="rounded-lg bg-error px-4 py-2 text-white disabled:opacity-60"
+                    type="button"
+                    onClick={confirmAction.onConfirm}
+                    disabled={Boolean(actionLoading)}
+                  >
+                    {actionLoading ? '...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       {selectedUser ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4" onClick={() => setSelectedUser(null)}>
