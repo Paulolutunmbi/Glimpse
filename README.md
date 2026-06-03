@@ -16,7 +16,7 @@ Glimpse is a React-based social content experience for browsing moments, managin
 
 ## Features
 
-- Auth flows for signup, login, and direct forgot-password reset.
+- Auth flows for signup, login, and direct forgot-password reset with username, account email, and new password.
 - Protected routes for the main feed, profile, settings, and profile setup.
 - User profile state managed centrally through context.
 - Feed rendering with live socket updates for new posts, likes, and deletions.
@@ -91,6 +91,7 @@ The included `vercel.json` rewrites all browser routes to `index.html`, so direc
 - `src/services/apiService.js` wraps the backend endpoints used by the pages and forms.
 - `src/context/UserContext.jsx` loads `/api/user/me` on startup, stores the current user/profile payload, and exposes refresh/update helpers.
 - `src/socket.js` opens a Socket.IO connection to the same backend base URL for realtime feed updates.
+- The forgot-password page posts only `username`, `email`, and `newPassword`; there are no reset-link, reset-token, or email-verification steps in the client flow.
 
 ## Contributor Notes
 

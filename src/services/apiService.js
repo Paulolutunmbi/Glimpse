@@ -9,8 +9,12 @@ export const authService = {
         const response = await api.post('/api/auth/login', userData);
         return response.data;
     },
-    forgotPassword: async (payload) => {
-        const response = await api.post('/api/auth/forgot-password', payload);
+    forgotPassword: async ({ username, email, newPassword }) => {
+        const response = await api.post('/api/auth/forgot-password', {
+            username,
+            email,
+            newPassword,
+        });
         return response.data;
     },
     logout: () => {
