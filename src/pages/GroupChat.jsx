@@ -5,6 +5,7 @@ import { messageService } from '../services/apiService';
 import { socket } from '../socket';
 import Avatar from '../components/Avatar';
 import Navbar from '../components/Navbar';
+import { shareToClipboard } from '../utils/share';
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -53,6 +54,10 @@ export default function GroupChat() {
   const [editingGroupName, setEditingGroupName] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [typingUsers, setTypingUsers] = useState(new Set());
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
   const messagesEndRef = useRef(null);
   const currentUserId = user?.id || user?._id || null;
 
@@ -155,8 +160,10 @@ export default function GroupChat() {
 
   const handleSendMessage = async () => {
     const trimmed = text.trim();
-    if (!trimmed || !groupId) return;
+    if (!trimmed || !groupId || isSending) return;
 
+    setIsSending(true);
+    setSendError('');
     setText('');
     try {
       const response = await messageService.sendGroupMessage(groupId, { text: trimmed });
@@ -166,7 +173,27 @@ export default function GroupChat() {
       }
     } catch (err) {
       console.error(err);
+      setSendError(err?.response?.data?.error || 'Failed to send message.');
       setText(trimmed);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleShareGroup = async () => {
+    if (!groupId || isSharing) return;
+    setIsSharing(true);
+    setShareMessage('');
+    try {
+      await shareToClipboard({ type: 'group', id: groupId });
+      setShareMessage('Group link copied!');
+      setTimeout(() => setShareMessage(''), 2200);
+    } catch (err) {
+      console.error(err);
+      setShareMessage('Failed to copy group link');
+      setTimeout(() => setShareMessage(''), 2200);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -259,6 +286,14 @@ export default function GroupChat() {
             </div>
           </div>
           <button
+            onClick={handleShareGroup}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
+            aria-label="Share group"
+            disabled={isSharing}
+          >
+            <span className="material-symbols-outlined">{isSharing ? 'progress_activity' : 'share'}</span>
+          </button>
+          <button
             onClick={() => setShowInfo(!showInfo)}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
             aria-label="Group info"
@@ -267,6 +302,13 @@ export default function GroupChat() {
           </button>
         </div>
       </header>
+      {shareMessage ? (
+        <div className={`px-4 py-2 text-sm font-semibold sm:px-6 ${
+          shareMessage.includes('Failed') ? 'text-error' : 'text-green-600'
+        }`}>
+          {shareMessage}
+        </div>
+      ) : null}
 
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
@@ -330,23 +372,27 @@ export default function GroupChat() {
             placeholder="Type a message..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage();
               }
             }}
+            disabled={isSending}
             className="flex-1 rounded-full border border-outline-variant px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all"
           />
           <button
             onClick={handleSendMessage}
-            disabled={!text.trim()}
+            disabled={!text.trim() || isSending}
             className="p-3 rounded-full bg-primary-container text-white hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-container/50 flex-shrink-0"
             aria-label="Send message"
           >
-            <span className="material-symbols-outlined">send</span>
+            <span className="material-symbols-outlined">{isSending ? 'progress_activity' : 'send'}</span>
           </button>
         </div>
+        {sendError ? (
+          <p className="mt-2 text-xs font-semibold text-error">{sendError}</p>
+        ) : null}
       </div>
 
       {/* Group Info Panel */}

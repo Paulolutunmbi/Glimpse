@@ -19,6 +19,7 @@ import Search from './pages/Search';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Goodbye from './pages/Goodbye';
+import PostDetail from './pages/PostDetail';
 
 const LoadingScreen = () => (
   <div className="flex min-h-screen items-center justify-center bg-background text-on-background">
@@ -92,6 +93,9 @@ function App() {
         >
           <Route path="/" element={<Home />} />
           <Route path="/reels" element={<Reels />} />
+          <Route path="/reels/:postId" element={<PostDetail />} />
+          <Route path="/post/:postId" element={<PostDetail />} />
+          <Route path="/posts/:postId" element={<PostDetail />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/search" element={<Search />} />
           <Route path="/notifications" element={<Notifications />} />

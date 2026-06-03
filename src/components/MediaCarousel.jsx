@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const isVideo = (item) => item?.type === 'video' || item?.url?.includes('/video/');
 
@@ -8,20 +8,18 @@ export default function MediaCarousel({ media = [], poster }) {
   const touchEndX = useRef(0);
   const items = useMemo(() => media.filter((item) => item?.url), [media]);
 
-  if (!items.length) return null;
-
   const active = items[activeIndex] || items[0];
   const showDots = items.length > 1;
   const canPrev = activeIndex > 0;
   const canNext = activeIndex < items.length - 1;
 
-  const handlePrev = () => {
-    if (canPrev) setActiveIndex(activeIndex - 1);
-  };
+  const handlePrev = useCallback(() => {
+    setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  }, []);
 
-  const handleNext = () => {
-    if (canNext) setActiveIndex(activeIndex + 1);
-  };
+  const handleNext = useCallback(() => {
+    setActiveIndex((prev) => (prev < items.length - 1 ? prev + 1 : prev));
+  }, [items.length]);
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches?.[0]?.clientX ?? 0;
@@ -50,7 +48,15 @@ export default function MediaCarousel({ media = [], poster }) {
     };
     window.addEventListener('keydown', handleKeydown);
     return () => window.removeEventListener('keydown', handleKeydown);
-  }, [canPrev, canNext, activeIndex]);
+  }, [handlePrev, handleNext]);
+
+  useEffect(() => {
+    if (activeIndex > items.length - 1) {
+      setActiveIndex(Math.max(0, items.length - 1));
+    }
+  }, [activeIndex, items.length]);
+
+  if (!items.length) return null;
 
   return (
     <div 

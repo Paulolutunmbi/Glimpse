@@ -8,6 +8,10 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
   const [followingIds, setFollowingIds] = useState(new Set());
   const [hiddenIds, setHiddenIds] = useState(new Set());
   const currentUserId = String(currentUser?.id || currentUser?._id || '');
+  const relationFollowingIds = useMemo(
+    () => new Set((currentUser?.relations?.following || []).map(String)),
+    [currentUser?.relations?.following]
+  );
 
   useEffect(() => {
     setFollowingIds(
@@ -17,7 +21,6 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
           .map((creator) => String(creator.id || creator._id))
       )
     );
-    setHiddenIds(new Set());
   }, [suggestions]);
 
   useEffect(() => {
@@ -32,42 +35,50 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
   }, [onFollowChange]);
 
   const visibleSuggestions = useMemo(
-    () => (suggestions || []).filter((creator) => !hiddenIds.has(String(creator.id || creator._id || ''))),
-    [suggestions, hiddenIds]
+    () =>
+      (suggestions || []).filter((creator) => {
+        const creatorId = String(creator.id || creator._id || '');
+        if (!creatorId || creatorId === currentUserId) return false;
+        return (
+          !hiddenIds.has(creatorId) &&
+          !followingIds.has(creatorId) &&
+          !relationFollowingIds.has(creatorId) &&
+          !creator.isFollowing &&
+          !creator._isFollowing
+        );
+      }),
+    [suggestions, hiddenIds, followingIds, relationFollowingIds, currentUserId]
   );
 
   const handleFollow = useCallback(async (creatorId) => {
-    if (!creatorId) return;
+    if (!creatorId || creatorId === currentUserId) return;
 
     setFollowingIds((previous) => {
-      const isCurrentlyFollowing = previous.has(creatorId);
       const next = new Set(previous);
-      if (isCurrentlyFollowing) {
-        next.delete(creatorId);
-      } else {
-        next.add(creatorId);
-      }
+      next.add(creatorId);
       
       // Async update
       (async () => {
         try {
-          await userService.toggleFollow(creatorId, isCurrentlyFollowing);
-          // Hide creator after following
-          if (!isCurrentlyFollowing) {
-            setHiddenIds((prevHidden) => new Set([...prevHidden, creatorId]));
-          }
+          setHiddenIds((prevHidden) => new Set([...prevHidden, creatorId]));
+          await userService.toggleFollow(creatorId, false);
           // Trigger onFollowChange to refresh list
-          onFollowChange?.();
+          onFollowChange?.(creatorId);
         } catch (err) {
           console.error('Follow action failed:', err);
           // Revert on error
           setFollowingIds(previous);
+          setHiddenIds((prevHidden) => {
+            const nextHidden = new Set(prevHidden);
+            nextHidden.delete(creatorId);
+            return nextHidden;
+          });
         }
       })();
 
       return next;
     });
-  }, [onFollowChange]);
+  }, [currentUserId, onFollowChange]);
 
   return (
     <aside className="w-full flex-shrink-0 xl:w-80">
@@ -78,7 +89,6 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
             const creatorId = String(creator.id || creator._id || '');
             const isSelf = Boolean(creator.isYou) || (currentUserId && creatorId === currentUserId);
             if (!creatorId || isSelf) return null;
-            const isFollowing = followingIds.has(creatorId) || creator.isFollowing || creator._isFollowing;
             return (
               <div key={creatorId} className="group flex cursor-pointer items-center justify-between hover:bg-surface-container/50 transition-colors rounded-xl px-2 py-1">
                 <div className="flex min-w-0 items-center gap-3">
@@ -100,16 +110,14 @@ function Suggestions({ suggestions, discovery, onFollowChange, currentUser }) {
                 </div>
                 <button
                   className={`press-in rounded-full px-3 py-1.5 text-[12px] font-label-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container/50 ${
-                    isFollowing
-                      ? 'border border-outline-variant bg-surface-container-high text-on-surface hover:bg-surface-container hover:border-primary-container/50'
-                      : 'bg-primary-container text-white hover:bg-primary hover:shadow-md'
+                    'bg-primary-container text-white hover:bg-primary hover:shadow-md'
                   }`}
                   onClick={() => handleFollow(creatorId)}
                   type="button"
                   disabled={isSelf}
-                  aria-label={isSelf ? 'Your account' : isFollowing ? 'Unfollow creator' : 'Follow creator'}
+                  aria-label={isSelf ? 'Your account' : 'Follow creator'}
                 >
-                  {isFollowing ? 'Following' : 'Follow'}
+                  Follow
                 </button>
               </div>
             );

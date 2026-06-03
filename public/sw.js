@@ -1,5 +1,14 @@
-const CACHE_NAME = 'glimpse-static-v1';
-const CORE_ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE_NAME = 'glimpse-static-v2';
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/images/glimpse-icon-32.png',
+  '/images/glimpse-icon-180.png',
+  '/images/glimpse-icon-192.png',
+  '/images/glimpse-icon-512.png',
+  '/images/glimpse-icon-maskable-512.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)));
@@ -34,7 +43,8 @@ self.addEventListener('fetch', (event) => {
   const shouldCache =
     request.destination === 'document' ||
     request.destination === 'script' ||
-    request.destination === 'style';
+    request.destination === 'style' ||
+    request.destination === 'image';
 
   if (!shouldCache) return;
 

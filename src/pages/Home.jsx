@@ -74,6 +74,44 @@ export default function Home() {
     [relations]
   );
 
+  const preferenceTags = useMemo(() => {
+    const values = user?.profile?.preferences?.length
+      ? user.profile.preferences
+      : user?.preferences || [];
+    return new Set(values.map((item) => String(item || '').toLowerCase()).filter(Boolean));
+  }, [user]);
+
+  const getAuthorId = useCallback((post) => String(post?.author?._id || post?.author || ''), []);
+
+  const matchesActiveFeed = useCallback(
+    (post) => {
+      if (!canViewPost(post)) return false;
+      const authorId = getAuthorId(post);
+
+      if (feedType === 'reels') {
+        return post?.type === 'video' || post?.media?.some((item) => item?.type === 'video');
+      }
+
+      if (feedType === 'following') {
+        return authorId === String(currentUserId || '') || followingIds.has(authorId);
+      }
+
+      if (feedType === 'personalized' && preferenceTags.size > 0) {
+        const postTags = [
+          ...(post?.tags || []),
+          ...(post?.hashtags || []),
+          post?.category,
+        ]
+          .map((item) => String(item || '').toLowerCase())
+          .filter(Boolean);
+        return postTags.some((tag) => preferenceTags.has(tag));
+      }
+
+      return true;
+    },
+    [canViewPost, currentUserId, feedType, followingIds, getAuthorId, preferenceTags]
+  );
+
   const normalizePost = useCallback((post, userId) => {
     const likes = Array.isArray(post?.likes) ? post.likes : [];
     const postId = post._id || post.id;
@@ -234,7 +272,10 @@ export default function Home() {
         delete next[targetId];
         return next;
       });
-      refreshDiscovery();
+      await Promise.all([refreshDiscovery(), refreshUser()]);
+      if (feedType === 'following' || feedType === 'personalized') {
+        loadFeed({ replace: true });
+      }
     } catch (err) {
       console.error(err);
       setFollowOverrides((prev) => {
@@ -254,7 +295,7 @@ export default function Home() {
     const handlePostCreated = (payload) => {
       const newPost = payload?.post || payload;
       if (!newPost) return;
-      if (!canViewPost(newPost)) return;
+      if (!matchesActiveFeed(newPost)) return;
       setPosts((prev) => {
         const normalized = normalizePost(newPost, currentUserId);
         return mergeUniquePosts(prev, [normalized], { prepend: true });
@@ -265,13 +306,20 @@ export default function Home() {
       const incoming = payload?.post || payload;
       const postId = incoming?._id || incoming?.id;
       if (!postId) return;
-      setPosts((prev) =>
-        prev.map((item) =>
-          item._id === postId || item.id === postId
-            ? normalizePost({ ...item, ...incoming }, currentUserId)
-            : item
-        )
-      );
+      setPosts((prev) => {
+        const existing = prev.find((item) => item._id === postId || item.id === postId);
+        if (!existing) {
+          if (!matchesActiveFeed(incoming)) return prev;
+          return mergeUniquePosts(prev, [normalizePost(incoming, currentUserId)], { prepend: true });
+        }
+
+        const merged = normalizePost({ ...existing, ...incoming }, currentUserId);
+        if (!matchesActiveFeed(merged)) {
+          return prev.filter((item) => item._id !== postId && item.id !== postId);
+        }
+
+        return prev.map((item) => (item._id === postId || item.id === postId ? merged : item));
+      });
     };
 
     const handlePostLiked = (payload) => {
@@ -378,9 +426,20 @@ export default function Home() {
 
     const handleFollowUpdated = () => {
       refreshDiscovery();
+      if (feedType === 'following' || feedType === 'personalized') {
+        loadFeed({ replace: true });
+      }
     };
 
     socket.on('followUpdated', handleFollowUpdated);
+
+    const handleTrendingUpdated = () => {
+      if (feedType === 'trending') {
+        loadFeed({ replace: true });
+      }
+    };
+
+    socket.on('trendingUpdated', handleTrendingUpdated);
 
     const handleVisibility = (payload) => {
       const postId = payload?.postId || payload?.id;
@@ -389,7 +448,7 @@ export default function Home() {
         prev.filter((item) => {
           if (item._id !== postId && item.id !== postId) return true;
           const next = { ...item, visibility: payload?.visibility || item.visibility };
-          return canViewPost(next);
+          return matchesActiveFeed(next);
         })
       );
     };
@@ -409,12 +468,18 @@ export default function Home() {
       socket.off('post:unreposted', handlePostUnreposted);
       socket.off('post:visibility', handleVisibility);
       socket.off('followUpdated', handleFollowUpdated);
+      socket.off('trendingUpdated', handleTrendingUpdated);
     };
-  }, [currentUserId, canViewPost, mergeUniquePosts, normalizePost, refreshDiscovery]);
+  }, [currentUserId, feedType, loadFeed, matchesActiveFeed, mergeUniquePosts, normalizePost, refreshDiscovery]);
 
-  const filteredDiscoverList = discoverList.filter(
-    (person) => String(person?._id || person?.id || '') !== String(currentUserId || '')
-  );
+  const filteredDiscoverList = discoverList.filter((person) => {
+    const personId = String(person?._id || person?.id || '');
+    if (!personId || personId === String(currentUserId || '')) return false;
+    if (!discoverQuery.trim() && (followingIds.has(personId) || person?.isFollowing || person?._isFollowing)) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>
@@ -517,8 +582,11 @@ export default function Home() {
               currentUser={user}
               suggestions={discovery?.suggestedCreators || []}
               discovery={discovery}
-              onFollowChange={() => {
-                refreshDiscovery();
+              onFollowChange={async () => {
+                await Promise.all([refreshDiscovery(), refreshUser()]);
+                if (feedType === 'following' || feedType === 'personalized') {
+                  loadFeed({ replace: true });
+                }
               }}
             />
           </div>

@@ -29,6 +29,10 @@ export const postService = {
         });
         return response.data;
     },
+    getPost: async (postId) => {
+        const response = await api.get(`/api/posts/${postId}`);
+        return response.data;
+    },
     createPost: async (payload, options = {}) => {
         if (payload instanceof FormData) {
             const response = await api.post('/api/posts', payload, {

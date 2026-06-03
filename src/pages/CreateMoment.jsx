@@ -34,6 +34,8 @@ export default function CreateMoment() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const submitRequestIdRef = useRef(null);
+  const submitInFlightRef = useRef(false);
 
   const previews = useMemo(
     () =>
@@ -105,13 +107,19 @@ export default function CreateMoment() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     setError('');
     setIsSubmitting(true);
     setProgress(0);
+    submitRequestIdRef.current =
+      submitRequestIdRef.current ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     if (!files.length && !caption.trim()) {
       setError('Add a caption or media before posting.');
       setIsSubmitting(false);
+      submitInFlightRef.current = false;
       return;
     }
 
@@ -127,6 +135,7 @@ export default function CreateMoment() {
       if (caption.trim()) formData.append('caption', caption.trim());
       if (location.trim()) formData.append('location', location.trim());
       formData.append('visibility', visibility);
+      formData.append('clientRequestId', submitRequestIdRef.current);
       if (tags.trim()) formData.append('tags', JSON.stringify(parseList(tags)));
       // Use extracted hashtags from caption instead of manual input
       if (extractedHashtags.length > 0) {
@@ -144,7 +153,9 @@ export default function CreateMoment() {
     } catch (err) {
       console.error(err);
       setError(err?.response?.data?.message || err?.response?.data?.error || err?.response?.data?.details || 'Failed to publish moment.');
+      submitRequestIdRef.current = null;
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

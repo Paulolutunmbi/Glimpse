@@ -5,6 +5,7 @@ import CommentModal from './CommentModal';
 import Avatar from './Avatar';
 import MediaCarousel from './MediaCarousel';
 import VerifiedBadge from './VerifiedBadge';
+import { shareToClipboard } from '../utils/share';
 
 function PostCard({ post, currentUser }) {
   const postId = useMemo(() => post?._id || post?.id, [post]);
@@ -29,6 +30,8 @@ function PostCard({ post, currentUser }) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
   const [repostCaption, setRepostCaption] = useState('');
   const [editForm, setEditForm] = useState({
     caption: post?.caption || '',
@@ -269,11 +272,24 @@ function PostCard({ post, currentUser }) {
   };
 
   const handleShare = async () => {
-    if (!postId) return;
+    if (!postId || isSharing) return;
+    setIsSharing(true);
+    setShareMessage('');
     try {
-      await postService.sharePost(postId);
+      const response = await postService.sharePost(postId);
+      await shareToClipboard({
+        type: post?.type === 'video' ? 'reel' : 'post',
+        id: postId,
+        url: post?.type === 'video' ? undefined : response?.shareUrl,
+      });
+      setShareMessage('Link copied');
+      setTimeout(() => setShareMessage(''), 2200);
     } catch (err) {
       console.error(err);
+      setShareMessage('Could not copy link');
+      setTimeout(() => setShareMessage(''), 2200);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -522,9 +538,10 @@ function PostCard({ post, currentUser }) {
               className="p-2 rounded-full transition-all duration-200 text-on-surface hover:text-on-surface-variant hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-container/30 active:scale-90 flex items-center justify-center"
               onClick={handleShare}
               type="button"
+              disabled={isSharing}
               aria-label="Share post"
             >
-              <span className="material-symbols-outlined text-[22px]">send</span>
+              <span className="material-symbols-outlined text-[22px]">{isSharing ? 'progress_activity' : 'send'}</span>
             </button>
           </div>
           <button
@@ -565,6 +582,11 @@ function PostCard({ post, currentUser }) {
             <span className="font-bold">{saves.toLocaleString()}</span> {saves === 1 ? 'save' : 'saves'}
           </span>
         </div>
+        {shareMessage ? (
+          <div className={`text-xs font-semibold ${shareMessage.includes('Could') ? 'text-error' : 'text-green-600'}`}>
+            {shareMessage}
+          </div>
+        ) : null}
 
         <div className="font-body-sm text-on-surface">
           <span className="font-label-md font-bold mr-1 hover:underline cursor-pointer transition-colors inline-flex items-center gap-1">
@@ -582,13 +604,13 @@ function PostCard({ post, currentUser }) {
       </div>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setEditOpen(false)}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setEditOpen(false)}>
           <div 
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col"
+            className="flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
             onClick={(event) => event.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 py-3 dark:bg-gray-900 sm:px-5">
               <h3 className="font-semibold text-lg text-on-surface">Edit Post</h3>
               <button
                 type="button"
@@ -601,7 +623,7 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
               {/* Caption */}
               <div className="space-y-2">
                 <label className="block font-semibold text-on-surface">
@@ -609,7 +631,7 @@ function PostCard({ post, currentUser }) {
                 </label>
                 <textarea
                   className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all resize-none"
-                  rows={5}
+                  rows={4}
                   placeholder="Write a caption..."
                   value={editForm.caption}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, caption: event.target.value }))}
@@ -679,7 +701,7 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 border-t border-outline-variant/30 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4 flex justify-end gap-3">
+            <div className="flex justify-end gap-3 border-t border-outline-variant/30 bg-white px-4 py-3 dark:bg-gray-900 sm:px-5">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
@@ -709,7 +731,7 @@ function PostCard({ post, currentUser }) {
       ) : null}
 
       {deleteConfirmOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)}>
           <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
             <div className="p-6 space-y-4">
               <div className="flex items-start gap-4">
@@ -754,10 +776,10 @@ function PostCard({ post, currentUser }) {
 
       {/* Repost Modal */}
       {showRepostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setShowRepostModal(false)}>
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[85dvh] md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm" onClick={() => setShowRepostModal(false)}>
+          <div className="flex max-h-[84dvh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900 md:max-h-[86vh]" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="border-b border-outline-variant/30 p-4 sm:p-6 flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-outline-variant/30 p-4">
               <h2 className="font-semibold text-lg text-on-surface">
                 {reposted ? 'Remove Repost?' : 'Share this post'}
               </h2>
@@ -772,7 +794,7 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto space-y-4 p-4 sm:p-6">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
               {!reposted && (
                 <>
                   <div>
@@ -781,7 +803,7 @@ function PostCard({ post, currentUser }) {
                     </label>
                     <textarea
                       className="w-full rounded-lg border border-outline-variant/30 p-3 font-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container transition-all resize-none"
-                      rows={3}
+                      rows={2}
                       placeholder="Share why you love this post..."
                       value={repostCaption}
                       onChange={(e) => setRepostCaption(e.target.value)}
@@ -827,7 +849,7 @@ function PostCard({ post, currentUser }) {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-outline-variant/30 bg-white dark:bg-gray-900 p-4 sm:p-6 flex gap-3">
+            <div className="flex gap-3 border-t border-outline-variant/30 bg-white p-4 dark:bg-gray-900">
               <button
                 type="button"
                 onClick={() => {

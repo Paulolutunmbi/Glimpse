@@ -13,18 +13,19 @@ export default function SavedMoments() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  const normalizePost = (post) => {
+  const normalizePost = useCallback((post) => {
     const likes = Array.isArray(post?.likes) ? post.likes : [];
+    const currentUserId = user?.id || user?._id || null;
     return {
       ...post,
       id: post._id || post.id,
       _id: post._id || post.id,
       likes,
       likesCount: likes.length || post.likesCount || post.likes || 0,
-      isLiked: user?.id ? likes.includes(user.id) : false,
+      isLiked: currentUserId ? likes.includes(currentUserId) : false,
       isSaved: true,
     };
-  };
+  }, [user?.id, user?._id]);
 
   const loadSaved = useCallback(
     async ({ nextCursor = null, replace = false } = {}) => {
@@ -47,7 +48,7 @@ export default function SavedMoments() {
         setIsFetchingMore(false);
       }
     },
-    [hasMore]
+    [hasMore, normalizePost]
   );
 
   useEffect(() => {

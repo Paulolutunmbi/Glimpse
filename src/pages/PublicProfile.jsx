@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { userService } from '../services/apiService';
+import { shareToClipboard } from '../utils/share';
 
 const PublicProfile = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const PublicProfile = () => {
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -63,33 +65,18 @@ const PublicProfile = () => {
   };
 
   const handleShareProfile = async () => {
-    const profileUrl = `${window.location.origin}/u/${username}`;
-
-    // Try native Share API first (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Check out ${profile.user.fullName}'s profile`,
-          text: profile.profile.bio || `Check out ${profile.user.fullName} on Glimpse`,
-          url: profileUrl,
-        });
-        return;
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
-      }
-    }
-
-    // Fallback to copy to clipboard
+    if (!username || isSharing) return;
+    setIsSharing(true);
     try {
-      await navigator.clipboard.writeText(profileUrl);
+      await shareToClipboard({ type: 'profile', id: username });
       setShareMessage('Profile link copied!');
       setTimeout(() => setShareMessage(''), 2000);
     } catch (err) {
       console.error('Copy to clipboard failed:', err);
       setShareMessage('Failed to copy link');
       setTimeout(() => setShareMessage(''), 2000);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -162,6 +149,7 @@ const PublicProfile = () => {
           </div>
           <button
             onClick={handleShareProfile}
+            disabled={isSharing}
             className="rounded-full p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
             title="Share profile"
           >
@@ -209,6 +197,7 @@ const PublicProfile = () => {
               )}
               <button
                 onClick={handleShareProfile}
+                disabled={isSharing}
                 className="rounded-full border border-zinc-200 p-2 text-zinc-500 transition-colors duration-200 hover:bg-zinc-50"
                 title="Copy profile link"
               >

@@ -5,6 +5,9 @@ import { socket } from "../socket";
 import Avatar from "./Avatar";
 import VerifiedBadge from "./VerifiedBadge";
 
+const getCommentId = (comment) => comment?._id || comment?.id || null;
+const getCommentKey = (comment) => getCommentId(comment) || comment?.clientId || `${comment?.createdAt || ""}-${comment?.text || ""}`;
+
 const CommentModal = ({
   post,
   isOpen,
@@ -76,6 +79,8 @@ const CommentModal = ({
     return String(existing?.text || "").trim() === String(incoming?.text || "").trim();
   };
 
+  const unwrapCommentResponse = (response) => response?.comment || response?.data?.comment || response?.data || response;
+
   const handleCancelEdit = useCallback(() => {
     setEditingId(null);
     setEditingText("");
@@ -143,6 +148,8 @@ const CommentModal = ({
     if (!isOpen || !postId) return;
 
     const handleCommentCreated = (payload) => {
+      const targetPostId = payload?.postId || payload?.comment?.postId || payload?.post?._id;
+      if (targetPostId && String(targetPostId) !== String(postId)) return;
       const incoming = payload?.comment || payload;
       if (!incoming) return;
       upsertComment(incoming);
@@ -156,6 +163,8 @@ const CommentModal = ({
     };
 
     const handleCommentDeleted = (payload) => {
+      const targetPostId = payload?.postId;
+      if (targetPostId && String(targetPostId) !== String(postId)) return;
       const commentId = payload?.commentId || payload?.id || payload;
       if (!commentId) return;
       setComments((prev) => prev.filter((item) => item._id !== commentId && item.id !== commentId));
@@ -272,7 +281,8 @@ const CommentModal = ({
     payload.clientId = clientId;
 
     try {
-      const newComment = await commentService.create(payload);
+      const response = await commentService.create(payload);
+      const newComment = unwrapCommentResponse(response);
       const resolvedComment = {
         ...newComment,
         text: newComment?.text ?? trimmed,
@@ -406,18 +416,18 @@ const CommentModal = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-black/60 p-0 md:items-center md:p-6"
+      className="fixed inset-0 z-[90] flex items-stretch justify-center bg-black/60 p-0 md:items-center md:p-5"
       onClick={handleClose}
     >
       <div
-        className="bg-white w-full h-[100dvh] max-h-[100dvh] overflow-hidden md:h-auto md:max-h-[85vh] md:w-[min(88vw,860px)] lg:w-[min(80vw,900px)] md:rounded-2xl rounded-none flex flex-col shadow-xl"
+        className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-white shadow-xl md:h-auto md:max-h-[82dvh] md:w-[min(86vw,760px)] md:rounded-2xl lg:w-[min(74vw,820px)]"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
           {/* Left: Image area */}
-          <div className="w-full md:w-[58%] max-h-56 shrink-0 bg-surface-variant flex items-stretch justify-stretch overflow-hidden rounded-t-none md:max-h-none md:rounded-l-2xl">
+          <div className="flex h-44 w-full shrink-0 items-stretch justify-stretch overflow-hidden rounded-t-none bg-surface-variant sm:h-52 md:h-auto md:w-[54%] md:max-h-none md:rounded-l-2xl">
             {imageSources[0] ? (
               <img
                 alt="Post"
@@ -432,8 +442,8 @@ const CommentModal = ({
           </div>
 
           {/* Right: Comments panel */}
-          <div className="w-full md:w-[44%] flex flex-col min-h-0 overflow-hidden">
-            <div className="sticky top-0 z-10 bg-white border-b border-surface-variant p-3 flex items-center gap-3">
+          <div className="flex min-h-0 w-full flex-col overflow-hidden md:w-[46%]">
+            <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-surface-variant bg-white p-3">
               <button
                 type="button"
                 onClick={handleClose}
@@ -444,7 +454,7 @@ const CommentModal = ({
               <span className="font-label-md text-on-surface">Comments</span>
             </div>
 
-            <div className="p-4 border-b border-surface-variant bg-white">
+            <div className="border-b border-surface-variant bg-white px-4 py-3">
               <p className="font-label-md text-on-surface inline-flex items-center gap-1">
                 <span>{postUsername}</span>
                 <VerifiedBadge verified={post?.user?.verified} size={12} />
@@ -460,7 +470,7 @@ const CommentModal = ({
               ) : null}
             </div>
 
-            <div className="p-4 flex items-center justify-between border-b border-surface-variant bg-white">
+            <div className="flex items-center justify-between gap-3 border-b border-surface-variant bg-white px-3 py-2">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -483,12 +493,12 @@ const CommentModal = ({
                   </span>
                 </button>
               </div>
-              <div className="font-label-md text-secondary">
+              <div className="shrink-0 text-right font-label-md text-xs text-secondary sm:text-sm">
                 {formatCount(likeCount)} Likes | {formatCount(commentCount)} Comments
               </div>
             </div>
 
-            <div className="p-3 flex items-center justify-between overflow-x-auto gap-2 border-b border-surface-variant bg-white">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-surface-variant bg-white px-3 py-2">
               {emojiReactions.map((emoji) => (
                 <button
                   key={emoji}
@@ -502,7 +512,7 @@ const CommentModal = ({
               ))}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-4 bg-white" ref={commentsContainerRef}>
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain bg-white px-4 py-3" ref={commentsContainerRef}>
               {error ? (
                 <div className="rounded-lg border border-error/30 bg-error-container px-3 py-2 text-sm text-on-error-container">
                   {error}

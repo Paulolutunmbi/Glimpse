@@ -60,7 +60,7 @@ export default function Search() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, savedIds, user?.id, user?._id]);
 
   const handleToggleFollow = async (targetId, isFollowing) => {
     if (!targetId || String(targetId) === String(user?.id || user?._id || '')) return;

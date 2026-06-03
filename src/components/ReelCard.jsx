@@ -3,6 +3,7 @@ import { postService, userService } from '../services/apiService';
 import { socket } from '../socket';
 import CommentModal from './CommentModal';
 import Avatar from './Avatar';
+import { shareToClipboard } from '../utils/share';
 
 const formatCount = (value) => {
   const numeric = Number(value);
@@ -27,6 +28,8 @@ export default function ReelCard({ reel, currentUser }) {
   const [saved, setSaved] = useState(Boolean(reel?.isSaved));
   const [saves, setSaves] = useState(reel?.saveCount ?? 0);
   const [openComments, setOpenComments] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
   const [isFollowing, setIsFollowing] = useState(
     reel?.author ? followIds.has(String(reel.author)) : false
   );
@@ -168,11 +171,20 @@ export default function ReelCard({ reel, currentUser }) {
   };
 
   const handleShare = async () => {
-    if (!postId) return;
+    if (!postId || isSharing) return;
+    setIsSharing(true);
+    setShareMessage('');
     try {
       await postService.sharePost(postId);
+      await shareToClipboard({ type: 'reel', id: postId });
+      setShareMessage('Link copied');
+      setTimeout(() => setShareMessage(''), 2200);
     } catch (err) {
       console.error(err);
+      setShareMessage('Could not copy link');
+      setTimeout(() => setShareMessage(''), 2200);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -270,8 +282,13 @@ export default function ReelCard({ reel, currentUser }) {
             <span className="text-xs">Comments</span>
           </button>
 
-          <button className="flex flex-col items-center gap-1 text-white" onClick={handleShare} type="button">
-            <span className="material-symbols-outlined text-[28px]">send</span>
+          <button
+            className="flex flex-col items-center gap-1 text-white disabled:opacity-70"
+            onClick={handleShare}
+            type="button"
+            disabled={isSharing}
+          >
+            <span className="material-symbols-outlined text-[28px]">{isSharing ? 'progress_activity' : 'send'}</span>
             <span className="text-xs">Share</span>
           </button>
 
@@ -286,6 +303,13 @@ export default function ReelCard({ reel, currentUser }) {
           </button>
         </div>
       </div>
+      {shareMessage ? (
+        <div className={`absolute left-1/2 top-20 z-20 -translate-x-1/2 rounded-full px-4 py-2 text-xs font-semibold shadow-lg ${
+          shareMessage.includes('Could') ? 'bg-red-600 text-white' : 'bg-white text-neutral-900'
+        }`}>
+          {shareMessage}
+        </div>
+      ) : null}
 
       <CommentModal
         post={reel}

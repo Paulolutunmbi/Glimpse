@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
 import VerifiedBadge from '../components/VerifiedBadge';
+import { shareToClipboard } from '../utils/share';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
 
@@ -11,6 +12,7 @@ const Profile = () => {
   const { user, profile, stats, relations, posts, savedPosts } = useUser();
   const [activeTab, setActiveTab] = useState('posts');
   const [shareMessage, setShareMessage] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
 
@@ -29,33 +31,18 @@ const Profile = () => {
   const followingCount = stats?.followingCount ?? relations?.following?.length ?? 0;
 
   const handleShareProfile = async () => {
-    const profileUrl = `${window.location.origin}/u/${handle}`;
-
-    // Try native Share API first (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Check out ${displayName}'s profile`,
-          text: bio || `Check out ${displayName} on Glimpse`,
-          url: profileUrl,
-        });
-        return;
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
-      }
-    }
-
-    // Fallback to copy to clipboard
+    if (!handle || isSharing) return;
+    setIsSharing(true);
     try {
-      await navigator.clipboard.writeText(profileUrl);
+      await shareToClipboard({ type: 'profile', id: handle });
       setShareMessage('Profile link copied!');
       setTimeout(() => setShareMessage(''), 2000);
     } catch (err) {
       console.error('Copy to clipboard failed:', err);
       setShareMessage('Failed to copy link');
       setTimeout(() => setShareMessage(''), 2000);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -131,8 +118,9 @@ const Profile = () => {
               className="rounded-lg border border-outline-variant bg-surface px-lg py-sm font-label-md text-label-md text-on-surface transition-all active:scale-95 hover:bg-zinc-50"
               type="button"
               onClick={handleShareProfile}
+              disabled={isSharing}
             >
-              Share Profile
+              {isSharing ? 'Copying...' : 'Share Profile'}
             </button>
           </div>
 

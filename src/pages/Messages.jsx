@@ -52,6 +52,8 @@ export default function Messages() {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const currentUserId = user?.id || user?._id || null;
 
   const appendMessage = useCallback((incoming) => {
@@ -192,7 +194,9 @@ export default function Messages() {
 
   const handleSend = async () => {
     const trimmed = text.trim();
-    if (!trimmed || !activeConversation?._id) return;
+    if (!trimmed || !activeConversation?._id || isSending) return;
+    setIsSending(true);
+    setSendError('');
     setText('');
     try {
       const response = await messageService.sendMessage({
@@ -207,6 +211,10 @@ export default function Messages() {
       refreshCounts();
     } catch (err) {
       console.error(err);
+      setSendError(err?.response?.data?.error || 'Failed to send message.');
+      setText(trimmed);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -380,17 +388,23 @@ export default function Messages() {
                   handleSend();
                 }
               }}
-              disabled={!activeConversation}
+              disabled={!activeConversation || isSending}
             />
             <button
-              className="rounded-full bg-primary-container px-4 py-2 text-sm text-white transition-all duration-200 hover:bg-primary hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-white transition-all duration-200 hover:bg-primary hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary-container/30"
               type="button"
               onClick={handleSend}
-              disabled={!activeConversation}
+              disabled={!activeConversation || isSending || !text.trim()}
+              aria-label="Send message"
             >
-              Send
+              <span className="material-symbols-outlined text-[20px]">
+                {isSending ? 'progress_activity' : 'send'}
+              </span>
             </button>
           </div>
+          {sendError ? (
+            <p className="mt-2 text-xs font-semibold text-error">{sendError}</p>
+          ) : null}
         </section>
       </main>
 
