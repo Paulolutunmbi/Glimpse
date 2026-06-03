@@ -6,8 +6,10 @@ import { adminService } from '../services/apiService';
 import { socket } from '../socket';
 import StatusMessage from '../components/StatusMessage';
 import Avatar from '../components/Avatar';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
+const isAdminEmail = (email) => String(email || '').trim().toLowerCase() === ADMIN_EMAIL;
 
 const toDateLabel = (value) => {
   if (!value) return 'N/A';
@@ -69,6 +71,16 @@ const BarChart = ({ title, data, color = '#0ea5e9', loading = false }) => {
   );
 };
 
+const AdminActionButton = ({ children, className = '', ...props }) => (
+  <button
+    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    type="button"
+    {...props}
+  >
+    {children}
+  </button>
+);
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -88,7 +100,7 @@ const Admin = () => {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = Boolean(user?.isAdmin) || isAdminEmail(user?.email);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -188,6 +200,30 @@ const Admin = () => {
       await Promise.all([loadUsers(page, search), loadAnalytics()]);
     } catch (err) {
       setError('Failed to delete user');
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const setUserVerification = async (userId, verified) => {
+    setActionLoading(userId);
+    try {
+      const response = await adminService.setUserVerification(userId, verified);
+      const updated = response?.data;
+      if (updated) {
+        setUsers((prev) =>
+          prev.map((item) => (String(item.id) === String(updated.id) ? { ...item, ...updated } : item))
+        );
+        setSelectedUser((prev) =>
+          prev && String(prev.id) === String(updated.id) ? { ...prev, ...updated } : prev
+        );
+      }
+      setConfirmAction(null);
+      withSuccessToast(verified ? 'User verified' : 'Verification removed');
+      await loadUsers(page, search);
+    } catch (err) {
+      setError('Failed to update verification');
       console.error(err);
     } finally {
       setActionLoading(null);
@@ -341,22 +377,22 @@ const Admin = () => {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-white shadow-sm">
-              <table className="w-full min-w-[760px] border-collapse">
+              <table className="w-full min-w-[980px] border-collapse">
                 <thead>
                   <tr className="border-b border-outline-variant/30 bg-surface-container-lowest">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                    <th className="w-[220px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                    <th className="w-[260px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                    <th className="w-[170px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Joined
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                    <th className="w-[190px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                    <th className="sticky right-0 z-10 w-[270px] bg-surface-container-lowest px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant shadow-[-8px_0_12px_rgba(255,255,255,0.9)]">
                       Actions
                     </th>
                   </tr>
@@ -364,33 +400,70 @@ const Admin = () => {
                 <tbody>
                   {users.map((u) => (
                     <tr key={u.id} className="border-b border-outline-variant/20">
-                      <td className="px-4 py-3 text-sm text-on-surface">{u.fullName || u.name || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-on-surface-variant">{u.email}</td>
-                      <td className="px-4 py-3 text-sm text-on-surface-variant">{toDateLabel(u.createdAt)}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            u.isBanned
-                              ? 'bg-error-container text-on-error-container'
-                              : 'bg-emerald-100 text-emerald-700'
-                          }`}
-                        >
-                          {u.isBanned ? 'Banned' : 'Active'}
+                      <td className="px-4 py-3 text-sm text-on-surface">
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                          <span className="truncate">{u.fullName || u.name || 'N/A'}</span>
+                          <VerifiedBadge verified={u.verified} size={13} />
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <button
-                            className="rounded-lg border border-outline-variant/30 px-3 py-1 text-xs"
-                            type="button"
+                      <td className="px-4 py-3 text-sm text-on-surface-variant">
+                        <span className="block max-w-[250px] truncate" title={u.email}>{u.email}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-on-surface-variant">{toDateLabel(u.createdAt)}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex flex-wrap gap-1.5">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                              u.isBanned
+                                ? 'bg-error-container text-on-error-container'
+                                : 'bg-emerald-100 text-emerald-700'
+                            }`}
+                          >
+                            {u.isBanned ? 'Banned' : 'Active'}
+                          </span>
+                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${u.verified ? 'bg-sky-100 text-sky-700' : 'bg-zinc-100 text-zinc-600'}`}>
+                            {u.verified ? 'Verified' : 'Unverified'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="sticky right-0 bg-white px-4 py-3 shadow-[-8px_0_12px_rgba(255,255,255,0.9)]">
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          <AdminActionButton
+                            className="border border-outline-variant/30 text-on-surface"
                             onClick={() => openUserDetails(u)}
                           >
                             Details
-                          </button>
+                          </AdminActionButton>
+                          {u.verified ? (
+                            <AdminActionButton
+                              className="bg-sky-50 text-sky-700"
+                              disabled={actionLoading === u.id || !u.actionPermissions?.canRemoveVerification}
+                              onClick={() =>
+                                setConfirmAction({
+                                  message: `Remove verification from ${u.email}?`,
+                                  onConfirm: () => setUserVerification(u.id, false),
+                                })
+                              }
+                            >
+                              Remove Tick
+                            </AdminActionButton>
+                          ) : (
+                            <AdminActionButton
+                              className="bg-sky-600 text-white"
+                              disabled={actionLoading === u.id || !u.actionPermissions?.canVerify}
+                              onClick={() =>
+                                setConfirmAction({
+                                  message: `Verify ${u.email}?`,
+                                  onConfirm: () => setUserVerification(u.id, true),
+                                })
+                              }
+                            >
+                              Verify
+                            </AdminActionButton>
+                          )}
                           {u.isBanned ? (
-                            <button
-                              className="rounded-lg bg-emerald-100 px-3 py-1 text-xs text-emerald-700"
-                              type="button"
+                            <AdminActionButton
+                              className="bg-emerald-100 text-emerald-700"
                               disabled={actionLoading === u.id}
                               onClick={() =>
                                 setConfirmAction({
@@ -400,12 +473,11 @@ const Admin = () => {
                               }
                             >
                               {actionLoading === u.id ? '...' : 'Unban'}
-                            </button>
+                            </AdminActionButton>
                           ) : (
-                            <button
-                              className="rounded-lg bg-red-100 px-3 py-1 text-xs text-red-700"
-                              type="button"
-                              disabled={actionLoading === u.id}
+                            <AdminActionButton
+                              className="bg-red-100 text-red-700"
+                              disabled={actionLoading === u.id || !u.actionPermissions?.canBan}
                               onClick={() =>
                                 setConfirmAction({
                                   message: `Ban ${u.email}?`,
@@ -414,8 +486,20 @@ const Admin = () => {
                               }
                             >
                               {actionLoading === u.id ? '...' : 'Ban'}
-                            </button>
+                            </AdminActionButton>
                           )}
+                          <AdminActionButton
+                            className="bg-error text-white"
+                            disabled={actionLoading === u.id || !u.actionPermissions?.canDelete}
+                            onClick={() =>
+                              setConfirmAction({
+                                message: `Delete ${u.email}? This is permanent.`,
+                                onConfirm: () => deleteUser(u.id),
+                              })
+                            }
+                          >
+                            Delete
+                          </AdminActionButton>
                         </div>
                       </td>
                     </tr>
@@ -518,7 +602,10 @@ const Admin = () => {
                       className="h-20 w-20"
                     />
                     <div className="min-w-0 flex-1 text-center sm:text-left">
-                      <p className="text-lg font-semibold text-on-surface">{selectedUser.fullName || selectedUser.name || 'N/A'}</p>
+                      <p className="inline-flex items-center justify-center gap-1.5 text-lg font-semibold text-on-surface sm:justify-start">
+                        {selectedUser.fullName || selectedUser.name || 'N/A'}
+                        <VerifiedBadge verified={selectedUser.verified} size={15} />
+                      </p>
                       <p className="text-sm text-on-surface-variant">@{selectedUser.username || 'unknown'}</p>
                       <p className="mt-1 text-sm text-on-surface-variant">{selectedUser.email}</p>
                       <p className="mt-1 text-xs text-on-surface-variant">Joined {toDateLabel(selectedUser.createdAt)}</p>
@@ -531,6 +618,9 @@ const Admin = () => {
                       }`}
                     >
                       {selectedUser.isBanned ? 'Banned' : 'Active'}
+                    </span>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${selectedUser.verified ? 'bg-sky-100 text-sky-700' : 'bg-zinc-100 text-zinc-600'}`}>
+                      {selectedUser.verified ? 'Verified' : 'Unverified'}
                     </span>
                   </div>
 
@@ -557,11 +647,40 @@ const Admin = () => {
                   ) : null}
 
                   <div className="mt-5 flex flex-wrap justify-end gap-2">
+                    {selectedUser.verified ? (
+                      <button
+                        className="rounded-lg bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700"
+                        type="button"
+                        disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canRemoveVerification}
+                        onClick={() =>
+                          setConfirmAction({
+                            message: `Remove verification from ${selectedUser.email}?`,
+                            onConfirm: () => setUserVerification(selectedUser.id, false),
+                          })
+                        }
+                      >
+                        Remove Verification
+                      </button>
+                    ) : (
+                      <button
+                        className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white"
+                        type="button"
+                        disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canVerify}
+                        onClick={() =>
+                          setConfirmAction({
+                            message: `Verify ${selectedUser.email}?`,
+                            onConfirm: () => setUserVerification(selectedUser.id, true),
+                          })
+                        }
+                      >
+                        Verify User
+                      </button>
+                    )}
                     {selectedUser.isBanned ? (
                       <button
                         className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
                         type="button"
-                        disabled={actionLoading === selectedUser.id}
+                        disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canUnban}
                         onClick={() =>
                           setConfirmAction({
                             message: `Unban ${selectedUser.email}?`,
@@ -575,7 +694,7 @@ const Admin = () => {
                       <button
                         className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white"
                         type="button"
-                        disabled={actionLoading === selectedUser.id}
+                        disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canBan}
                         onClick={() =>
                           setConfirmAction({
                             message: `Ban ${selectedUser.email}?`,
@@ -589,7 +708,7 @@ const Admin = () => {
                     <button
                       className="rounded-lg bg-error px-4 py-2 text-sm font-medium text-white"
                       type="button"
-                      disabled={actionLoading === selectedUser.id}
+                      disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canDelete}
                       onClick={() =>
                         setConfirmAction({
                           message: `Delete ${selectedUser.email}? This is permanent.`,

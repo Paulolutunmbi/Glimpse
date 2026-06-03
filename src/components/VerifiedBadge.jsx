@@ -1,4 +1,4 @@
-export default function VerifiedBadge({ verified = true, className = '', size = 14 }) {
+export default function VerifiedBadge({ verified = false, className = '', size = 14 }) {
   if (!verified) return null;
 
   const dimension = Number(size) || 14;

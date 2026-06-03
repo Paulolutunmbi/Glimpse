@@ -6,6 +6,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { shareToClipboard } from '../utils/share';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
+const isAdminEmail = (email) => String(email || '').trim().toLowerCase() === ADMIN_EMAIL;
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const Profile = () => {
   const [shareMessage, setShareMessage] = useState('');
   const [isSharing, setIsSharing] = useState(false);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = Boolean(user?.isAdmin) || isAdminEmail(user?.email);
 
   const gridItems = useMemo(() => (activeTab === 'saved' ? savedPosts : posts), [
     activeTab,

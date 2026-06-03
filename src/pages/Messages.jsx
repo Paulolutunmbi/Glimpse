@@ -6,6 +6,7 @@ import { useUser } from '../context/UserContext.jsx';
 import { socket } from '../socket';
 import Avatar from '../components/Avatar';
 import CreateGroupModal from '../components/CreateGroupModal';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -269,7 +270,10 @@ export default function Messages() {
                       className="h-8 w-8"
                     />
                     <div>
-                      <p className="font-semibold text-on-surface">{result.username || result.name}</p>
+                      <p className="inline-flex items-center gap-1 font-semibold text-on-surface">
+                        {result.username || result.name}
+                        <VerifiedBadge verified={result.verified} size={11} />
+                      </p>
                       <p className="text-[10px] text-on-surface-variant">{result.fullName || result.name}</p>
                     </div>
                   </button>
@@ -309,7 +313,10 @@ export default function Messages() {
                     className="h-10 w-10"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-on-surface">{isGroup ? conversation.name : partner?.username || 'User'}</p>
+                    <p className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface">
+                      {isGroup ? conversation.name : partner?.username || 'User'}
+                      {!isGroup ? <VerifiedBadge verified={partner?.verified} size={11} /> : null}
+                    </p>
                     <p className="text-xs text-on-surface-variant">{conversation.lastMessageText || 'New conversation'}</p>
                   </div>
                   {conversation.unreadCount ? (
@@ -340,7 +347,10 @@ export default function Messages() {
               className="h-10 w-10"
             />
             <div>
-              <p className="text-sm font-semibold text-on-surface">{activePartner?.username || 'Select a chat'}</p>
+              <p className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface">
+                {activePartner?.username || 'Select a chat'}
+                <VerifiedBadge verified={activePartner?.verified} size={12} />
+              </p>
               <p className="text-xs text-on-surface-variant">{activePartner?.fullName || ''}</p>
             </div>
           </div>

@@ -287,6 +287,10 @@ export const adminService = {
         const response = await api.get(`/api/admin/users/${userId}`);
         return response.data;
     },
+    setUserVerification: async (userId, verified) => {
+        const response = await api.patch(`/api/admin/users/${userId}/verification`, { verified });
+        return response.data;
+    },
     banUser: async (userId, payload = {}) => {
         const response = await api.post(`/api/admin/users/${userId}/ban`, payload);
         return response.data;

@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext.jsx';
 import { messageService } from '../services/apiService';
 import { socket } from '../socket';
 import Avatar from '../components/Avatar';
+import VerifiedBadge from '../components/VerifiedBadge';
 import Navbar from '../components/Navbar';
 import { shareToClipboard } from '../utils/share';
 
@@ -333,7 +334,10 @@ export default function GroupChat() {
                   )}
                   <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} gap-1`}>
                     {!isMine && (
-                      <p className="text-xs font-semibold text-on-surface-variant">{sender?.username}</p>
+                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant">
+                        {sender?.username}
+                        <VerifiedBadge verified={sender?.verified} size={11} />
+                      </p>
                     )}
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm break-words ${
