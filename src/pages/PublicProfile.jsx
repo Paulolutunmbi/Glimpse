@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
 import VerifiedBadge from '../components/VerifiedBadge';
+import UserListModal from '../components/UserListModal';
 import { userService } from '../services/apiService';
 import { shareToClipboard } from '../utils/share';
 
@@ -18,6 +19,7 @@ const PublicProfile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -226,11 +228,17 @@ const PublicProfile = () => {
               <span className="font-semibold">{postsCount}</span>
               <span className="text-zinc-500 ml-1">Posts</span>
             </div>
-            <div className="hover:underline cursor-pointer">
+            <div
+              className="hover:underline cursor-pointer"
+              onClick={() => setModalType('followers')}
+            >
               <span className="font-semibold">{followersCount}</span>
               <span className="text-zinc-500 ml-1">Followers</span>
             </div>
-            <div className="hover:underline cursor-pointer">
+            <div
+              className="hover:underline cursor-pointer"
+              onClick={() => setModalType('following')}
+            >
               <span className="font-semibold">{followingCount}</span>
               <span className="text-zinc-500 ml-1">Following</span>
             </div>

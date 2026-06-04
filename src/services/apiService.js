@@ -214,6 +214,14 @@ export const userService = {
         const response = await api.delete('/api/user/delete', { data: payload });
         return response.data;
     },
+    getFollowers: async (userId) => {
+        const response = await api.get(`/api/user/profile/${userId}/followers`);
+        return response.data;
+    },
+    getFollowing: async (userId) => {
+        const response = await api.get(`/api/user/profile/${userId}/following`);
+        return response.data;
+    },
 };
 
 export const settingsService = {

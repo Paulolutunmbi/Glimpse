@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext.jsx';
 import Avatar from '../components/Avatar';
 import VerifiedBadge from '../components/VerifiedBadge';
+import UserListModal from '../components/UserListModal';
 import { shareToClipboard } from '../utils/share';
 
 const ADMIN_EMAIL = 'oluwatunmbipaul@gmail.com';
@@ -14,6 +15,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const [shareMessage, setShareMessage] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
   const isAdmin = Boolean(user?.isAdmin) || isAdminEmail(user?.email);
 
@@ -132,13 +134,19 @@ const Profile = () => {
                 Moments
               </span>
             </div>
-            <div className="flex flex-col items-center">
+            <div
+              className="flex flex-col items-center cursor-pointer hover:opacity-85 transition-opacity"
+              onClick={() => setModalType('followers')}
+            >
               <span className="font-h3 text-h3 text-on-surface">{followersCount}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Followers
               </span>
             </div>
-            <div className="flex flex-col items-center">
+            <div
+              className="flex flex-col items-center cursor-pointer hover:opacity-85 transition-opacity"
+              onClick={() => setModalType('following')}
+            >
               <span className="font-h3 text-h3 text-on-surface">{followingCount}</span>
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                 Following
@@ -231,6 +239,14 @@ const Profile = () => {
           Profile
         </button>
       </nav>
+
+      {modalType && (
+        <UserListModal
+          userId={user?.id || user?._id}
+          type={modalType}
+          onClose={() => setModalType(null)}
+        />
+      )}
     </div>
   );
 };
