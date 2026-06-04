@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { postService, userService } from '../services/apiService';
 import { socket } from '../socket';
 import CommentModal from './CommentModal';
@@ -8,6 +9,7 @@ import VerifiedBadge from './VerifiedBadge';
 import { shareToClipboard } from '../utils/share';
 
 function PostCard({ post, currentUser }) {
+  const navigate = useNavigate();
   const postId = useMemo(() => post?._id || post?.id, [post]);
   const { user, timestamp, caption } = post;
   const avatarSrc = user?.avatar || user?.profilePicture || '';
@@ -405,13 +407,17 @@ function PostCard({ post, currentUser }) {
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <Avatar
-            className="h-10 w-10 border border-surface-variant cursor-pointer"
+            className="h-10 w-10 border border-surface-variant cursor-pointer hover:opacity-80 transition-opacity"
             alt={`close up profile photo of ${user?.username || 'user'}`}
             src={avatarSrc}
             name={user?.username || user?.name}
+            onClick={() => { if (user?._id || user?.id) navigate(`/profile/${user?._id || user?.id}`); }}
           />
           <div>
-            <h3 className="font-label-md text-on-surface leading-tight cursor-pointer hover:underline inline-flex items-center gap-1">
+            <h3
+              className="font-label-md text-on-surface leading-tight cursor-pointer hover:underline inline-flex items-center gap-1"
+              onClick={() => { if (user?.username) navigate(`/u/${user.username}`); }}
+            >
               <span>{user?.username}</span>
               <VerifiedBadge verified={user?.verified} size={12} />
             </h3>
@@ -587,16 +593,6 @@ function PostCard({ post, currentUser }) {
             {shareMessage}
           </div>
         ) : null}
-
-        <div className="font-body-sm text-on-surface">
-          <span className="font-label-md font-bold mr-1 hover:underline cursor-pointer transition-colors inline-flex items-center gap-1">
-            {user?.username}
-            <VerifiedBadge verified={user?.verified} size={12} />
-          </span>
-          {effectiveCaption}
-        </div>
-        {Array.isArray(effectiveHashtags) && effectiveHashtags.length > 0 ? (
-          <div className="text-xs text-primary font-medium flex flex-wrap gap-1">
             {effectiveHashtags.map((tag) => `#${String(tag).replace(/^#+/, '')}`).join(' ')}
           </div>
         ) : null}

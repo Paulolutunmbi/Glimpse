@@ -81,7 +81,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1200px] px-margin_mobile pt-24 md:px-margin_desktop">
+      <main className="mx-auto max-w-[1200px] px-margin_mobile pt-20 md:px-margin_desktop">
         <section className="mb-xxl flex w-full flex-col items-center text-center">
           <div className="mb-md">
             <Avatar

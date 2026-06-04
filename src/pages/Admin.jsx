@@ -87,21 +87,19 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [pagination, setPagination] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
-
   const isAdmin = Boolean(user?.isAdmin) || isAdminEmail(user?.email);
-
   useEffect(() => {
     if (!isAdmin) {
       navigate('/', { replace: true });
@@ -533,56 +531,64 @@ const Admin = () => {
         </section>
       </main>
 
-      {confirmAction
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
-              onClick={() => setConfirmAction(null)}
-            >
-              <div
-                className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-lg md:max-w-sm"
-                onClick={(event) => event.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-              >
-                <h3 className="text-lg font-semibold text-on-surface">Confirm Action</h3>
-                <p className="mt-2 text-sm text-on-surface-variant break-words">{confirmAction.message}</p>
-                <div className="mt-5 flex justify-end gap-2">
-                  <button
-                    className="rounded-lg border border-outline-variant/30 px-4 py-2"
-                    type="button"
-                    onClick={() => setConfirmAction(null)}
-                    disabled={Boolean(actionLoading)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="rounded-lg bg-error px-4 py-2 text-white disabled:opacity-60"
-                    type="button"
-                    onClick={confirmAction.onConfirm}
-                    disabled={Boolean(actionLoading)}
-                  >
-                    {actionLoading ? '...' : 'Confirm'}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
-
-      {selectedUser ? (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4" onClick={() => setSelectedUser(null)}>
+      {confirmAction && createPortal(
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setConfirmAction(null)}
+        >
           <div
-              className="h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-3xl"
-              onClick={(event) => event.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-            >
+            className="w-full max-w-md min-w-[280px] rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <h3 className="text-lg font-semibold text-gray-900">Confirm Action</h3>
+            <p className="mt-2 text-sm text-gray-600 break-words">{confirmAction.message}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition"
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                disabled={Boolean(actionLoading)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-[#FF5A5F] hover:bg-[#e04f54] px-4 py-2 text-sm font-medium text-white transition disabled:opacity-60"
+                type="button"
+                onClick={() => {
+                  confirmAction.onConfirm && confirmAction.onConfirm();
+                  setConfirmAction(null);
+                }}
+                disabled={Boolean(actionLoading)}
+              >
+                {actionLoading ? '...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedUser && createPortal(
+        <div
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4 backdrop-blur-sm"
+          onClick={() => setSelectedUser(null)}
+        >
+          <div
+            className="h-[92vh] w-full overflow-hidden rounded-t-3xl bg-white md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-3xl shadow-2xl flex flex-col"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant/30 bg-white px-4 py-3 md:px-6">
               <h3 className="text-lg font-semibold text-on-surface">User Details</h3>
-              <button className="rounded-full p-2 hover:bg-surface-container" type="button" onClick={() => setSelectedUser(null)}>
-                <span className="material-symbols-outlined">close</span>
+              <button
+                className="rounded-full p-2 hover:bg-surface-container transition text-zinc-500"
+                type="button"
+                onClick={() => setSelectedUser(null)}
+              >
+                <span className="material-symbols-outlined text-[#FF5A5F]">close</span>
               </button>
             </div>
 
@@ -610,18 +616,20 @@ const Admin = () => {
                       <p className="mt-1 text-sm text-on-surface-variant">{selectedUser.email}</p>
                       <p className="mt-1 text-xs text-on-surface-variant">Joined {toDateLabel(selectedUser.createdAt)}</p>
                     </div>
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        selectedUser.isBanned
-                          ? 'bg-error-container text-on-error-container'
-                          : 'bg-emerald-100 text-emerald-700'
-                      }`}
-                    >
-                      {selectedUser.isBanned ? 'Banned' : 'Active'}
-                    </span>
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${selectedUser.verified ? 'bg-sky-100 text-sky-700' : 'bg-zinc-100 text-zinc-600'}`}>
-                      {selectedUser.verified ? 'Verified' : 'Unverified'}
-                    </span>
+                    <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start sm:flex-col sm:items-end">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          selectedUser.isBanned
+                            ? 'bg-error-container text-on-error-container'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        {selectedUser.isBanned ? 'Banned' : 'Active'}
+                      </span>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${selectedUser.verified ? 'bg-sky-100 text-sky-700' : 'bg-zinc-100 text-zinc-600'}`}>
+                        {selectedUser.verified ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -646,10 +654,10 @@ const Admin = () => {
                     </div>
                   ) : null}
 
-                  <div className="mt-5 flex flex-wrap justify-end gap-2">
+                  <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-outline-variant/20 pt-4">
                     {selectedUser.verified ? (
                       <button
-                        className="rounded-lg bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700"
+                        className="rounded-lg bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-100 transition"
                         type="button"
                         disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canRemoveVerification}
                         onClick={() =>
@@ -663,7 +671,7 @@ const Admin = () => {
                       </button>
                     ) : (
                       <button
-                        className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white"
+                        className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 transition"
                         type="button"
                         disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canVerify}
                         onClick={() =>
@@ -678,7 +686,7 @@ const Admin = () => {
                     )}
                     {selectedUser.isBanned ? (
                       <button
-                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition"
                         type="button"
                         disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canUnban}
                         onClick={() =>
@@ -692,7 +700,7 @@ const Admin = () => {
                       </button>
                     ) : (
                       <button
-                        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white"
+                        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 transition"
                         type="button"
                         disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canBan}
                         onClick={() =>
@@ -706,7 +714,7 @@ const Admin = () => {
                       </button>
                     )}
                     <button
-                      className="rounded-lg bg-error px-4 py-2 text-sm font-medium text-white"
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
                       type="button"
                       disabled={actionLoading === selectedUser.id || !selectedUser.actionPermissions?.canDelete}
                       onClick={() =>
@@ -723,8 +731,9 @@ const Admin = () => {
               )}
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

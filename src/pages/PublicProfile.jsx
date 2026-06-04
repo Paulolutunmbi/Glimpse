@@ -84,7 +84,7 @@ const PublicProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-on-background font-body-md antialiased pb-20 md:pb-0 flex items-center justify-center">
         <div>Loading profile...</div>
       </div>
     );
@@ -92,7 +92,7 @@ const PublicProfile = () => {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
+      <div className="min-h-screen bg-background text-on-background font-body-md antialiased pb-20 md:pb-0">
         <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
             <button
@@ -130,7 +130,7 @@ const PublicProfile = () => {
   const followingCount = stats?.followingCount ?? profile.relations?.following?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md antialiased pt-16 pb-20 md:pb-0">
+    <div className="min-h-screen bg-background text-on-background font-body-md antialiased pb-20 md:pb-0">
       <header className="sticky top-0 z-40 w-full border-b border-zinc-100 bg-white/80 shadow-[0_20px_20px_-4px_rgba(0,0,0,0.06)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <button
@@ -186,16 +186,25 @@ const PublicProfile = () => {
             {/* Action Buttons */}
             <div className="flex gap-2">
               {currentUser && String(currentUser.id) !== String(profile.user.id) && (
-                <button
-                  onClick={handleFollow}
-                  className={`rounded-full px-6 py-2 font-semibold transition-colors duration-200 ${
-                    isFollowing
-                      ? 'border border-primary text-primary hover:bg-red-50'
-                      : 'bg-primary text-white hover:bg-primary/90'
-                  }`}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </button>
+                <>
+                  <button
+                    onClick={handleFollow}
+                    className={`rounded-full px-6 py-2 font-semibold transition-colors duration-200 ${
+                      isFollowing
+                        ? 'border border-primary text-primary hover:bg-red-50'
+                        : 'bg-primary text-white hover:bg-primary/90'
+                    }`}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/messages?userId=${profile.user.id}`)}
+                    className="rounded-full border border-outline-variant bg-surface px-6 py-2 font-semibold text-on-surface transition-colors duration-200 hover:bg-zinc-50 inline-flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">chat</span>
+                    Message
+                  </button>
+                </>
               )}
               <button
                 onClick={handleShareProfile}
@@ -262,11 +271,17 @@ const PublicProfile = () => {
                   <img
                     src={post.user?.avatar || ''}
                     alt={post.user?.name}
-                    className="h-10 w-10 rounded-full bg-zinc-200"
+                    className="h-10 w-10 rounded-full bg-zinc-200 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); if (post.user?.username) navigate(`/u/${post.user.username}`); }}
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-1">
-                      <h3 className="font-bold">{post.user?.name}</h3>
+                      <h3
+                        className="font-bold hover:underline cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); if (post.user?.username) navigate(`/u/${post.user.username}`); }}
+                      >
+                        {post.user?.name}
+                      </h3>
                       <VerifiedBadge verified={post.user?.verified} size={12} />
                       <span className="text-zinc-500">@{post.user?.username}</span>
                     </div>
